@@ -69,6 +69,8 @@ namespace TinyTrouble.Editor
             cameraGo.transform.position = new Vector3(0, 1.75f, -6.8f);
             cameraGo.transform.LookAt(new Vector3(0, 1.32f, 0));
             var camera = cameraGo.GetComponent<Camera>();
+            // Передаём нажатия мыши объёмной области героя через ту же систему событий, что и меню.
+            cameraGo.AddComponent<PhysicsRaycaster>();
             camera.fieldOfView = 37;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = Hex("#0C1934");
@@ -241,8 +243,13 @@ namespace TinyTrouble.Editor
             Part("Nose",PrimitiveType.Sphere,t,new Vector3(0,2.04f,-.42f),new Vector3(.14f,.15f,.13f),skin);
             Part("Smile",PrimitiveType.Sphere,t,new Vector3(0,1.91f,-.36f),new Vector3(.23f,.095f,.047f),hair);
             Part("SmileTeeth",PrimitiveType.Sphere,t,new Vector3(0,1.932f,-.388f),new Vector3(.16f,.034f,.018f),cream);
-            // Добавляем покачивание и сохраняем шаблон. Временную модель затем удаляем.
+            // Область нажатия охватывает героя; камера направляет события мыши компоненту вращения.
+            var hitArea = root.AddComponent<BoxCollider>();
+            hitArea.center = new Vector3(0, 1.3f, 0);
+            hitArea.size = new Vector3(1.65f, 2.65f, .95f);
             root.AddComponent<CharacterIdle>();
+            root.AddComponent<CharacterDrag>();
+            // Сохраняем шаблон с покачиванием и вращением. Временную модель затем удаляем.
             var asset=PrefabUtility.SaveAsPrefabAsset(root,Root+"/Prefabs/LobbyCharacter.prefab"); UnityEngine.Object.DestroyImmediate(root); return asset;
         }
         /// <summary>
@@ -365,6 +372,7 @@ namespace TinyTrouble.Editor
             Text("HeroState",playerTag,"ГОТОВ К ПРИКЛЮЧЕНИЯМ",new Vector2(.5f,.5f),new Vector2(0,-16),new Vector2(230,20),10,Cyan,true,TextAnchor.MiddleCenter);
             Text("Footer",t,"TINY TROUBLE  /  ПЕРВОЕ ПРИКЛЮЧЕНИЕ",new Vector2(0,0),new Vector2(326,35),new Vector2(520,28),13,Muted);
             Text("KeyboardHint",t,"TAB — ВЫБОР    ENTER — ПОДТВЕРДИТЬ",new Vector2(1,0),new Vector2(-329,35),new Vector2(530,28),12,Muted,false,TextAnchor.MiddleRight);
+            Text("RotationHint",t,"Зажми и потяни, чтобы повернуть",new Vector2(.5f,0),new Vector2(0,35),new Vector2(650,28),14,Cyan,false,TextAnchor.MiddleCenter);
             // Три панели находятся справа в одной позиции. Контроллер показывает только нужную.
             var panels=new GameObject[3];
             for(int i=0;i<3;i++)
@@ -421,6 +429,8 @@ namespace TinyTrouble.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
             // В сохранённой сцене сразу оставляем открытой только вкладку «Играть».
             for(int i=0;i<3;i++)panels[i].SetActive(i==0);
+            // Отдельный компонент переставляет меню и камеру при изменении размера окна.
+            canvasGo.AddComponent<LobbyLayout>().Configure(Camera.main, hero.transform);
             return canvasGo;
         }
     }

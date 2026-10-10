@@ -178,7 +178,7 @@ namespace TinyTrouble
             // Меняем положение без вызова события ползунка, чтобы не сохранять настройку повторно.
             volumeSlider.SetValueWithoutNotify(value);
             // Из доли делаем процент: например, 0.37 × 100 = 37.
-            volumeText.text = Mathf.RoundToInt(value * 100f) + "%";
+            volumeText.text = Mathf.RoundToInt(value * 100f) + " %";
         }
         /// <summary>
         /// Открывает игровой уровень по нажатию «ИГРАТЬ».

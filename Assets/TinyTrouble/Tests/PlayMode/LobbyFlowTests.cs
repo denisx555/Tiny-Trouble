@@ -150,7 +150,7 @@ namespace TinyTrouble.Tests
             {
                 slider.value = value; yield return null;
                 Assert.That(AudioListener.volume, Is.EqualTo(value).Within(.001f));
-                Assert.That(Find<Text>("VolumePercent").text, Is.EqualTo(Mathf.RoundToInt(value * 100) + "%"));
+                Assert.That(Find<Text>("VolumePercent").text, Is.EqualTo(Mathf.RoundToInt(value * 100) + " %"));
             }
             yield return SceneManager.LoadSceneAsync("Lobby"); yield return null;
             Assert.That(AudioListener.volume, Is.EqualTo(.37f).Within(.001f));
