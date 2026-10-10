@@ -11,6 +11,10 @@ namespace TinyTrouble
     {
         /// <summary>Подсказка вращения для узкого окна. Её можно сократить, изменив текст между кавычками.</summary>
         const string CompactRotationHint = "ЛКМ, чтобы повернуть";
+        /// <summary>Пределы приближения относительно обычного вида: меньше единицы отдаляет, больше приближает.</summary>
+        const float MinimumZoom = .65f, MaximumZoom = 4f;
+        /// <summary>Время сглаживания камеры в секундах: переход постепенно замедляется у выбранного положения.</summary>
+        const float ZoomSmoothTime = .14f;
         /// <summary>Камера лобби, которую отодвигаем при уменьшении свободного места.</summary>
         [SerializeField] Camera lobbyCamera;
         /// <summary>Герой, вокруг которого оставляем место для вращения.</summary>
@@ -21,6 +25,16 @@ namespace TinyTrouble
         CanvasScaler scaler;
         /// <summary>Размер окна при последней перестановке элементов.</summary>
         Vector2Int previousSize;
+        /// <summary>Выбранное и текущее приближение; скорость нужна для плавного перехода между ними.</summary>
+        float targetZoom = 1f, currentZoom = 1f, zoomVelocity;
+        /// <summary>Свободная область героя и размер поверхности интерфейса после последней раскладки.</summary>
+        Rect cameraArea;
+        /// <summary>Ширина и высота поверхности интерфейса для размещения героя внутри свободной области.</summary>
+        Vector2 cameraCanvasSize;
+        /// <summary>Центр и высота всех допустимых поз, которые не меняются во время жестов.</summary>
+        Vector3 fittedCenter;
+        /// <summary>Расстояние обычного вида, безопасное расстояние и высота всех поз героя.</summary>
+        float fittedDistance, safeDistance, fittedHeight;
 
         /// <summary>Сохраняет ссылки при создании сцены, не заменяя настройки других компонентов.</summary>
         /// <param name="camera">Камера, которая показывает героя.</param>
@@ -42,14 +56,30 @@ namespace TinyTrouble
             previousSize = Vector2Int.zero;
         }
 
-        /// <summary>Перестраивает меню только после изменения ширины или высоты окна.</summary>
+        /// <summary>Перестраивает меню при изменении окна и плавно применяет выбранное колёсиком приближение.</summary>
         void LateUpdate()
         {
             if (!lobbyCamera || !hero || !elements.ContainsKey("Header")) return;
             var size = new Vector2Int(Screen.width, Screen.height);
-            if (size == previousSize || size.x <= 0 || size.y <= 0) return;
-            previousSize = size;
-            ApplyLayout(size.x, size.y);
+            if (size.x <= 0 || size.y <= 0) return;
+            if (size != previousSize)
+            {
+                previousSize = size;
+                ApplyLayout(size.x, size.y);
+            }
+            if (currentZoom == targetZoom) return;
+            currentZoom = Mathf.SmoothDamp(currentZoom, targetZoom, ref zoomVelocity,
+                ZoomSmoothTime, Mathf.Infinity, Time.unscaledDeltaTime);
+            if (Mathf.Abs(currentZoom - targetZoom) < .0001f) { currentZoom = targetZoom; zoomVelocity = 0; }
+            PositionCamera();
+        }
+
+        /// <summary>Меняет выбранное приближение в допустимых пределах; движение произойдёт плавно в следующих кадрах.</summary>
+        /// <param name="amount">Сила прокрутки после настройки скорости; положительное значение приближает.</param>
+        public void ChangeZoom(float amount)
+        {
+            if (!isActiveAndEnabled || !lobbyCamera || !hero) return;
+            targetZoom = Mathf.Clamp(targetZoom * Mathf.Exp(amount), MinimumZoom, MaximumZoom);
         }
 
         /// <summary>Выбирает широкую или компактную раскладку и выделяет свободное место для героя.</summary>
@@ -89,7 +119,8 @@ namespace TinyTrouble
             Place("PlayerTag", heroCenterX - 123, tagY, 246, 62);
             var hintY = stacked ? panelY + panelHeight + 8 : 24;
             TextBox("RotationHint", stacked ? 24 : heroCenterX - 225, hintY, stacked ? width - 48 : 450, 28, 16, TextAnchor.MiddleCenter);
-            elements["RotationHint"].GetComponent<Text>().text = compact ? CompactRotationHint : "Зажми и потяни, чтобы повернуть";
+            elements["RotationHint"].GetComponent<Text>().text = compact ? CompactRotationHint + " · Колёсико"
+                : "ЛКМ — поворот · Колёсико — приближение";
             Place("Intro", 48, 450, 420, 320);
             // Описание тоже должно помещаться внутри своей области, без наложения строк.
             TextBox("IntroCopy", 0, 0, 410, 60, 18);
@@ -179,10 +210,32 @@ namespace TinyTrouble
             var aspect = width / height;
             var distance = Mathf.Max(halfHeight / (area.height / height * tangent),
                 radius / (area.width / width * tangent * aspect)) + radius + .25f;
+            cameraArea = area; cameraCanvasSize = new Vector2(width, height);
+            fittedCenter = new Vector3(hero.position.x, bounds.center.y, hero.position.z);
+            fittedDistance = distance; fittedHeight = bounds.size.y;
+            // Радиус учитывает поворот и взмах: камера остаётся перед всей моделью с запасом до ближней границы видимости.
+            safeDistance = radius + lobbyCamera.nearClipPlane + .4f;
+            // Для крупной головы оставляем примерно четверть высоты модели в каждую сторону от центра лица.
+            // Узкое или низкое окно ограничивает крупный план раньше, чтобы имя героя не закрывало волосы.
+            var faceRadius = fittedHeight * .24f;
+            var faceRoom = Mathf.Min(area.height / height * tangent, area.width / width * tangent * aspect);
+            safeDistance = Mathf.Max(safeDistance, faceRadius / faceRoom + faceRadius);
+            PositionCamera();
+        }
+
+        /// <summary>Приближает камеру к лицу и груди, сохраняя её направление и место героя между элементами меню.</summary>
+        /// <remarks>Интерфейс остаётся на отдельной поверхности Canvas. При крупном плане ноги могут уходить за экран.</remarks>
+        void PositionCamera()
+        {
+            if (fittedDistance <= 0) return;
+            var distance = Mathf.Max(safeDistance, fittedDistance / currentZoom);
+            var focus = Mathf.InverseLerp(1f, MaximumZoom, currentZoom);
+            var center = fittedCenter + Vector3.up * (fittedHeight * .22f * focus);
+            var tangent = Mathf.Tan(lobbyCamera.fieldOfView * Mathf.Deg2Rad * .5f);
+            var aspect = cameraCanvasSize.x / cameraCanvasSize.y;
+            var offsetX = (cameraArea.center.x / cameraCanvasSize.x * 2 - 1) * distance * tangent * aspect;
+            var offsetY = (cameraArea.center.y / cameraCanvasSize.y * 2 - 1) * distance * tangent;
             var rotation = Quaternion.Euler(6, 0, 0);
-            var center = new Vector3(hero.position.x, bounds.center.y, hero.position.z);
-            var offsetX = (area.center.x / width * 2 - 1) * distance * tangent * aspect;
-            var offsetY = (area.center.y / height * 2 - 1) * distance * tangent;
             lobbyCamera.transform.SetPositionAndRotation(center - rotation * new Vector3(offsetX, offsetY, distance), rotation);
         }
 

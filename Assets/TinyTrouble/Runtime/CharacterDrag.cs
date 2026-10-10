@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 namespace TinyTrouble
 {
     /// <summary>
-    /// Поворачивает героя при перетаскивании левой кнопкой мыши, начатом на его модели.
+    /// Поворачивает героя левой кнопкой мыши и приближает его колёсиком над моделью.
     /// </summary>
     /// <remarks>
     /// EventSystem передаёт сюда нажатие на область героя через PhysicsRaycaster камеры.
@@ -12,8 +12,10 @@ namespace TinyTrouble
     /// </remarks>
     [RequireComponent(typeof(CharacterIdle))]
     public sealed class CharacterDrag : MonoBehaviour, IPointerDownHandler, IPointerUpHandler,
-        IInitializePotentialDragHandler, IDragHandler, IEndDragHandler
+        IInitializePotentialDragHandler, IDragHandler, IEndDragHandler, IScrollHandler
     {
+        /// <summary>Скорость приближения за шаг колёсика: большее число приближает быстрее.</summary>
+        const float ZoomStep = .16f;
         /// <summary>
         /// Угол поворота при движении мыши на ширину окна; одинаков для разных разрешений.
         /// </summary>
@@ -22,6 +24,8 @@ namespace TinyTrouble
         /// Компонент, который объединяет ручной поворот и покачивание героя.
         /// </summary>
         CharacterIdle idle;
+        /// <summary>Раскладка лобби, которая одновременно управляет положением камеры.</summary>
+        LobbyLayout layout;
         /// <summary>
         /// Началось ли текущее нажатие левой кнопки именно на герое.
         /// </summary>
@@ -31,6 +35,15 @@ namespace TinyTrouble
         /// Находит покачивание того же героя при создании компонента.
         /// </summary>
         void Awake() { idle = GetComponent<CharacterIdle>(); }
+
+        /// <summary>Передаёт колёсико камере только при попадании указателя в героя.</summary>
+        /// <param name="eventData">Прокрутка мыши: положительное значение приближает, отрицательное отдаляет.</param>
+        public void OnScroll(PointerEventData eventData)
+        {
+            if (eventData.pointerId != -1 || eventData.scrollDelta.y == 0) return;
+            if (!layout) layout = FindObjectOfType<LobbyLayout>();
+            if (layout) layout.ChangeZoom(eventData.scrollDelta.y * ZoomStep);
+        }
 
         /// <summary>
         /// Начинает жест только для левой кнопки мыши.

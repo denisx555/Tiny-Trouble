@@ -6,6 +6,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -128,6 +129,8 @@ namespace TinyTrouble.Tests
                         Assert.That(Bounds(header[a]).Overlaps(Bounds(header[b])), Is.False, size + " " + header[a].name + " перекрывает " + header[b].name);
                 foreach (var text in Find("Header").GetComponentsInChildren<Text>())
                     Assert.That(text.preferredHeight, Is.LessThanOrEqualTo(text.rectTransform.rect.height + 1), size + " обрезан текст " + text.name);
+                var hint = Find("RotationHint").GetComponent<Text>();
+                Assert.That(hint.preferredWidth, Is.LessThanOrEqualTo(hint.rectTransform.rect.width + 1), size + " обрезана подсказка управления");
                 foreach (var tab in new[] { "TabPlay", "TabCharacter", "TabSettings" })
                 {
                     Find(tab).GetComponent<Button>().onClick.Invoke(); yield return null;
@@ -202,6 +205,45 @@ namespace TinyTrouble.Tests
             layout.enabled = false; layout.enabled = true;
             yield return null;
             Assert.That(Vector3.Distance(before, Camera.main.transform.position), Is.LessThan(.0001f), "Камера зависит от текущей позы героя");
+        }
+
+        /// <summary>Крупный план сохраняется при смене формата окна; лицо остаётся доступно для осмотра и вращения.</summary>
+        /// <returns>Ожидание применения размеров и движения камеры.</returns>
+        [UnityTest] public IEnumerator CloseViewSurvivesPortraitAndLandscapeResizing()
+        {
+            SetSize(720, 1280);
+            for (var i = 0; i < 8; i++) yield return null;
+            var hero = UnityEngine.Object.FindObjectOfType<CharacterIdle>();
+            hero.enabled = false; hero.GetComponent<CharacterLife>().enabled = false;
+            var head = hero.GetComponentsInChildren<Transform>().Single(t => t.name == "Head");
+            var data = new PointerEventData(EventSystem.current) { scrollDelta = Vector2.up * 1000, pointerId = -1 };
+            var before = Camera.main.transform.position;
+            ExecuteEvents.Execute(hero.gameObject, data, ExecuteEvents.scrollHandler);
+            yield return new WaitForSecondsRealtime(.8f);
+            var close = Camera.main.transform.position;
+            Assert.That(Vector3.Distance(close, before), Is.GreaterThan(1), "Нет крупного плана");
+            foreach (var size in new[] { new Vector2Int(1920, 1080), new Vector2Int(1024, 1024), new Vector2Int(390, 844), new Vector2Int(720, 1280) })
+            {
+                SetSize(size.x, size.y);
+                for (var i = 0; i < 8; i++) yield return null;
+                Assert.That(Screen.width, Is.EqualTo(size.x));
+                Assert.That(Screen.height, Is.EqualTo(size.y));
+                for (var angle = 0; angle < 360; angle += 90)
+                {
+                    // Покачивание отключено, поэтому применяем поворот прямо к модели.
+                    hero.transform.rotation = Quaternion.Euler(0, angle, 0);
+                    var point = Camera.main.WorldToViewportPoint(head.position);
+                    Assert.That(point.x, Is.InRange(.05f, .95f), size + " лицо вне экрана по ширине при повороте " + angle);
+                    Assert.That(point.y, Is.InRange(.1f, .9f), size + " лицо вне экрана по высоте при повороте " + angle);
+                    data.position = Camera.main.WorldToScreenPoint(head.position);
+                    Physics.SyncTransforms();
+                    var hits = new System.Collections.Generic.List<RaycastResult>();
+                    EventSystem.current.RaycastAll(data, hits);
+                    Assert.That(hits.Count, Is.GreaterThan(0), size + " голова не принимает мышь при повороте " + angle);
+                    Assert.That(ExecuteEvents.GetEventHandler<IDragHandler>(hits[0].gameObject), Is.EqualTo(hero.gameObject), size + " интерфейс перекрывает голову при повороте " + angle);
+                }
+            }
+            Assert.That(Vector3.Distance(Camera.main.transform.position, close), Is.LessThan(.01f), "Возврат к вертикальному окну сбросил приближение");
         }
     }
 }
