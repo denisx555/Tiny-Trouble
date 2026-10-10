@@ -6,6 +6,9 @@ namespace TinyTrouble
     /// <summary>Подготавливает группы существующей модели, не пересоздавая сцену или детали.</summary>
     public static class CharacterRigBuilder
     {
+        /// <summary>Высота точки поворота плеча; меньшее число опускает её ниже.</summary>
+        const float ShoulderHeight = 1.50f;
+
         /// <summary>Создаёт недостающие группы, сохраняет внешний вид и подключает движения тела.</summary>
         /// <param name="hero">Существующая модель или открытый шаблон героя.</param>
         public static void Configure(GameObject hero)
@@ -13,8 +16,8 @@ namespace TinyTrouble
             var root = hero.transform;
             var upper = Pivot(root, root, "UpperBodyPivot", new Vector3(0, .95f, 0));
             var head = Pivot(root, upper, "HeadPivot", new Vector3(0, 1.72f, 0));
-            var leftArm = Pivot(root, upper, "LeftArmPivot", new Vector3(-.44f, 1.55f, 0));
-            var rightArm = Pivot(root, upper, "RightArmPivot", new Vector3(.44f, 1.55f, 0));
+            var leftArm = Pivot(root, upper, "LeftArmPivot", new Vector3(-.36f, ShoulderHeight, 0));
+            var rightArm = Pivot(root, upper, "RightArmPivot", new Vector3(.36f, ShoulderHeight, 0));
             var leftFoot = Pivot(root, root, "LeftFootPivot", new Vector3(-.25f, .07f, -.35f));
             var rightFoot = Pivot(root, root, "RightFootPivot", new Vector3(.25f, .07f, -.35f));
             // Сохранение мировой позы при смене родителя оставляет модель внешне прежней.
@@ -105,10 +108,18 @@ namespace TinyTrouble
         /// <param name="name">Сохраняемое имя группы.</param>
         /// <param name="position">Точка поворота в координатах корня.</param>
         /// <returns>Группа частей без изменения их внешнего вида.</returns>
+        /// <remarks>При переносе существующей точки сохраняет положение деталей, чтобы исходная модель не сдвигалась.</remarks>
         static Transform Pivot(Transform root, Transform parent, string name, Vector3 position)
         {
             var existing = root.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == name);
-            if (existing) return existing;
+            if (existing)
+            {
+                // Переносим точку и компенсируем этот перенос у детей — частей руки или тела.
+                var offset = root.TransformPoint(position) - existing.position;
+                existing.position += offset;
+                foreach (Transform child in existing) child.position -= offset;
+                return existing;
+            }
             var pivot = new GameObject(name).transform;
             pivot.SetParent(root, false); pivot.localPosition = position;
             pivot.SetParent(parent, true);

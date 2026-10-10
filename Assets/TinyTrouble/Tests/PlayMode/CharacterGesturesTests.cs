@@ -16,8 +16,24 @@ namespace TinyTrouble.Tests
             var before = upper.localPosition;
             var foot = Part("RightSole").position;
             Pose(gestures, "ApplyPose", "None", 0f, 0f, Mathf.PI * .5f);
-            Assert.That(upper.localPosition.y - before.y, Is.EqualTo(.012f).Within(.0001f));
+            Assert.That(upper.localPosition.y - before.y, Is.InRange(.02f, .03f), "Подъём должен быть заметным с камеры лобби");
             Assert.That(Vector3.Distance(Part("RightSole").position, foot), Is.LessThan(.0001f));
+        }
+
+        /// <summary>Вдох и выдох заметно меняют силуэт туловища, а сброс возвращает исходный вид.</summary>
+        [Test] public void BreathingChangesTorsoSilhouetteAndReturnsToRest()
+        {
+            var gestures = Required("CharacterGestures");
+            var body = Part("HoodieBody").GetComponent<Renderer>();
+            var rest = body.bounds.size;
+            Pose(gestures, "ApplyPose", "None", 0f, 0f, -Mathf.PI * .5f);
+            var exhale = body.bounds.size;
+            Pose(gestures, "ApplyPose", "None", 0f, 0f, Mathf.PI * .5f);
+            var inhale = body.bounds.size;
+            Assert.That((inhale.x - exhale.x) / rest.x, Is.GreaterThan(.04f), "Ширина туловища меняется слишком слабо");
+            Assert.That((inhale.z - exhale.z) / rest.z, Is.GreaterThan(.04f), "Дыхание сбоку тоже должно быть заметным");
+            gestures.GetType().GetMethod("ResetPose").Invoke(gestures, null);
+            Assert.That(Vector3.Distance(body.bounds.size, rest), Is.LessThan(.0001f));
         }
 
         /// <summary>Кисть остаётся связанной с рукавом при взмахе и после сброса.</summary>
@@ -36,6 +52,32 @@ namespace TinyTrouble.Tests
             Assert.That(sleeve.localPosition, Is.EqualTo(sleeveRelative));
             gestures.GetType().GetMethod("ResetPose").Invoke(gestures, null);
             Assert.That(Quaternion.Angle(rest, arm.localRotation), Is.LessThan(.01f));
+        }
+
+        /// <summary>Рукав остаётся немного внутри туловища во всех фазах взмаха, без щели у плеча.</summary>
+        /// <param name="gesture">Взмах при приветствии или случайном жесте.</param>
+        [TestCase("Wave")] [TestCase("Greeting")]
+        public void WavingSleeveStaysConnectedToTorso(string gesture)
+        {
+            var gestures = Required("CharacterGestures");
+            var sleeve = Part("HoodieRightSleeve");
+            var body = Part("HoodieBody");
+            var vertices = sleeve.GetComponent<MeshFilter>().sharedMesh.vertices;
+            for (var step = 0; step <= 100; step++)
+                foreach (var weight in new[] { .5f, 1f })
+                    foreach (var breath in new[] { -Mathf.PI * .5f, Mathf.PI * .5f })
+                    {
+                        Pose(gestures, "ApplyPose", gesture, step / 100f, weight, breath);
+                        var nearest = float.MaxValue;
+                        foreach (var vertex in vertices)
+                        {
+                            // Туловище — растянутая сфера: в его местных координатах радиус равен 0,5.
+                            var point = body.InverseTransformPoint(sleeve.TransformPoint(vertex));
+                            nearest = Mathf.Min(nearest, point.magnitude);
+                        }
+                        Assert.That(nearest, Is.LessThan(.48f),
+                            gesture + " фаза " + step / 100f + ": рукав не входит в туловище с небольшим запасом");
+                    }
         }
 
         /// <summary>Переминание приподнимает пятки по очереди, сохраняя точку носка.</summary>

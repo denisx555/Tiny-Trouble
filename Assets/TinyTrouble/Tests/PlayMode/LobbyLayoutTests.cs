@@ -23,13 +23,15 @@ namespace TinyTrouble.Tests
         object sizeGroup;
         /// <summary>Исходный размер и количество встроенных вариантов Unity.</summary>
         int oldIndex, builtInCount;
-        /// <summary>Число добавленных размеров для удаления после проверки.</summary>
+        /// <summary>Число размеров, добавленных только текущей проверкой, для удаления после неё.</summary>
         int addedCount;
 
         /// <summary>Сохраняет размер окна и открывает сохранённую сцену лобби.</summary>
         /// <returns>Ожидание загрузки сцены.</returns>
         [UnitySetUp] public IEnumerator Setup()
         {
+            // Unity использует этот объект тестов повторно: счётчик каждого запуска начинается с нуля.
+            addedCount = 0;
             var assembly = typeof(Editor).Assembly;
             var gameViewType = assembly.GetType("UnityEditor.GameView");
             gameView = EditorWindow.GetWindow(gameViewType);

@@ -5,6 +5,10 @@ namespace TinyTrouble
     /// <summary>Двигает тело и конечности героя, сохраняя исходные положения связанных деталей.</summary>
     public sealed class CharacterGestures : MonoBehaviour
     {
+        /// <summary>Высота подъёма верхней части тела на вдохе; большее число делает дыхание заметнее.</summary>
+        const float BreathingLift = .024f;
+        /// <summary>Изменение ширины и глубины тела на вдохе: 0,03 означает три процента.</summary>
+        const float BreathingExpansion = .03f;
         /// <summary>Группа тела, головы и рук: дыхание перемещает её целиком.</summary>
         [SerializeField] Transform upperBody;
         /// <summary>Точки поворота рук у плеч.</summary>
@@ -80,8 +84,8 @@ namespace TinyTrouble
             var breath = Mathf.Sin(breathingPhase);
             if (upperBody)
             {
-                upperBody.localPosition = positions[0] + Vector3.up * (breath * .012f);
-                upperBody.localScale = Vector3.Scale(scales[0], new Vector3(1 + breath * .01f, 1, 1 + breath * .01f));
+                upperBody.localPosition = positions[0] + Vector3.up * (breath * BreathingLift);
+                upperBody.localScale = Vector3.Scale(scales[0], new Vector3(1 + breath * BreathingExpansion, 1, 1 + breath * BreathingExpansion));
             }
             if (gesture == CharacterGesture.WeightShift)
             {
