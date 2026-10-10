@@ -249,6 +249,7 @@ namespace TinyTrouble.Editor
             hitArea.size = new Vector3(1.65f, 2.65f, .95f);
             root.AddComponent<CharacterIdle>();
             root.AddComponent<CharacterDrag>();
+            CharacterRigBuilder.Configure(root);
             // Сохраняем шаблон с покачиванием и вращением. Временную модель затем удаляем.
             var asset=PrefabUtility.SaveAsPrefabAsset(root,Root+"/Prefabs/LobbyCharacter.prefab"); UnityEngine.Object.DestroyImmediate(root); return asset;
         }

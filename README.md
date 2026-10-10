@@ -206,6 +206,8 @@ Unity загружает зависимости по [Packages/manifest.json](Pa
 - [Живой персонаж](docs/superpowers/specs/2026-10-10-character-life-design.md) —
   проект следующего изменения: жесты, моргание и реакции в лобби.
   Эти возможности пока не реализованы.
+- [План живого персонажа](docs/superpowers/plans/2026-10-10-character-life.md) —
+  подготовленные этапы реализации, проверки и учебный шаг с паузой между жестами.
 - [План реализации](docs/superpowers/plans/2026-10-10-lobby.md) — этапы работы
   и учебное задание.
 - [Отчёт проверки](docs/superpowers/reports/2026-10-10-lobby-validation.md) —
