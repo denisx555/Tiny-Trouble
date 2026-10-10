@@ -9,17 +9,27 @@ using UnityEngine.UI;
 
 namespace TinyTrouble.Tests
 {
+    /// <summary>
+    /// Проверяет сохранённую сцену в редакторе, без запуска игры.
+    /// </summary>
     public class LobbySceneTests
     {
+        /// <summary>
+        /// Проверяет наличие Lobby и её первое место в списке сцен игры.
+        /// </summary>
         [Test] public void LobbySceneExistsAndIsFirstBuildScene()
         {
             Assert.That(File.Exists("Assets/Scenes/Lobby.unity"), Is.True, "Lobby scene отсутствует");
             Assert.That(EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(),
                 Is.EqualTo(new[] { "Assets/Scenes/Lobby.unity", "Assets/Scenes/SampleScene.unity" }));
         }
+        /// <summary>
+        /// Проверяет ссылки на кнопки, шрифты и шаблон героя в сохранённой сцене.
+        /// </summary>
         [Test] public void SavedSceneHasWiredControlsAndCharacterPrefab()
         {
             Assert.That(File.Exists("Assets/Scenes/Lobby.unity"), Is.True, "Lobby scene отсутствует");
+            // Запоминаем список открытых сцен; finally возвращает его даже при провале проверки.
             var setup = EditorSceneManager.GetSceneManagerSetup();
             try
             {
@@ -29,6 +39,7 @@ namespace TinyTrouble.Tests
                 Assert.That(roots.SelectMany(r => r.GetComponentsInChildren<Camera>(true)).Count(), Is.EqualTo(1));
                 var controller = roots.SelectMany(r => r.GetComponentsInChildren<MonoBehaviour>(true))
                     .Single(m => m != null && m.GetType().Name == "LobbyController");
+                // SerializedObject читает поля компонента так, как они сохранены в Inspector.
                 var so = new SerializedObject(controller);
                 foreach (var field in new[] { "panels", "tabs", "playButton", "volumeSlider", "volumeText", "colorButtons", "hoodieRenderers", "statusText" })
                 {

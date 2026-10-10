@@ -9,13 +9,38 @@ using UnityEngine.UI;
 
 namespace TinyTrouble.Tests
 {
+    /// <summary>
+    /// Проверяет настоящее меню в режиме игры, нажимая его кнопки.
+    /// </summary>
+    /// <remarks>
+    /// IEnumerator позволяет приостановить проверку через yield return и дождаться следующего кадра или загрузки.
+    /// </remarks>
     public class LobbyFlowTests
     {
+        /// <summary>
+        /// Были ли настройки игрока записаны до начала проверки.
+        /// </summary>
         bool hadVolume, hadColor;
+        /// <summary>
+        /// Исходная сохранённая громкость и общий уровень звука для восстановления.
+        /// </summary>
         float oldVolume, oldListener;
+        /// <summary>
+        /// Исходный номер цвета игрока.
+        /// </summary>
         int oldColor;
+        /// <summary>
+        /// Временная копия героя для проверки независимости материалов.
+        /// </summary>
         GameObject extraCharacter;
+        /// <summary>
+        /// Число завершённых загрузок SampleScene.
+        /// </summary>
         int loadedCount;
+        /// <summary>
+        /// Сохраняет исходные настройки, очищает их для проверки и загружает Lobby.
+        /// </summary>
+        /// <returns>Шаги подготовки с ожиданием загрузки сцены.</returns>
         [UnitySetUp] public IEnumerator Setup()
         {
             hadVolume = PlayerPrefs.HasKey("TinyTrouble.Volume"); oldVolume = PlayerPrefs.GetFloat("TinyTrouble.Volume");
@@ -26,6 +51,10 @@ namespace TinyTrouble.Tests
             yield return SceneManager.LoadSceneAsync("Lobby");
             yield return null;
         }
+        /// <summary>
+        /// Убирает временные объекты и обработчик загрузки, восстанавливает настройки.
+        /// </summary>
+        /// <returns>Шаги очистки с ожиданием удаления объектов.</returns>
         [UnityTearDown] public IEnumerator Cleanup()
         {
             SceneManager.sceneLoaded -= CountLoaded;
@@ -35,11 +64,31 @@ namespace TinyTrouble.Tests
             PlayerPrefs.Save(); AudioListener.volume = oldListener;
             yield return null;
         }
+        /// <summary>
+        /// Считает завершённые загрузки SampleScene.
+        /// </summary>
+        /// <param name="scene">Загруженная сцена.</param>
+        /// <param name="mode">Способ загрузки, который передаёт Unity.</param>
         void CountLoaded(Scene scene, LoadSceneMode mode) { if (scene.name == "SampleScene") loadedCount++; }
+        /// <summary>
+        /// Находит компонент по имени в текущей сцене, включая скрытые панели.
+        /// </summary>
+        /// <param name="name">Имя объекта с нужным компонентом.</param>
+        /// <typeparam name="T">Вид компонента, например Button — кнопка.</typeparam>
+        /// <returns>Найденный компонент.</returns>
         static T Find<T>(string name) where T : Component => SceneManager.GetActiveScene().GetRootGameObjects()
             .SelectMany(r => r.GetComponentsInChildren<T>(true)).Single(c => c.name == name);
+        /// <summary>
+        /// Находит объект панели, чтобы проверять, показана она или скрыта.
+        /// </summary>
+        /// <param name="name">Имя панели в сцене.</param>
+        /// <returns>Объект найденной панели.</returns>
         static GameObject Panel(string name) => Find<RectTransform>(name).gameObject;
 
+        /// <summary>
+        /// Проверяет вкладки и выделение доступного элемента клавиатурой.
+        /// </summary>
+        /// <returns>Шаги проверки с ожиданием кадров.</returns>
         [UnityTest] public IEnumerator TabsSwitchPanelsAndKeepFocusOnVisibleControls()
         {
             Assert.That(Panel("PlayPanel").activeSelf, Is.True);
@@ -54,6 +103,10 @@ namespace TinyTrouble.Tests
             Assert.That(Panel("CharacterPanel").activeSelf, Is.False);
             Assert.That(EventSystem.current.currentSelectedGameObject, Is.EqualTo(Find<Slider>("VolumeSlider").gameObject));
         }
+        /// <summary>
+        /// Проверяет цвета толстовки и неизменность других деталей и второй копии героя.
+        /// </summary>
+        /// <returns>Шаги проверки, включая повторную загрузку Lobby.</returns>
         [UnityTest] public IEnumerator AllHoodieColorsChangeOnlyClothingAndPersist()
         {
             var root = GameObject.Find("LobbyCharacter");
@@ -61,6 +114,7 @@ namespace TinyTrouble.Tests
             var pants = root.GetComponentsInChildren<Renderer>().Single(r => r.name == "LeftTrouser");
             var skinBefore = skin.sharedMaterial.color; var pantsBefore = pants.sharedMaterial.color;
 #if UNITY_EDITOR
+            // Вторую копию берём из сохранённого шаблона, чтобы проверить независимость материала.
             extraCharacter = Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/TinyTrouble/Prefabs/LobbyCharacter.prefab"));
             var otherHoodie = extraCharacter.GetComponentsInChildren<Renderer>().First(r => r.name.StartsWith("Hoodie"));
             var otherColor = otherHoodie.sharedMaterial.color;
@@ -84,6 +138,10 @@ namespace TinyTrouble.Tests
             ColorUtility.TryParseHtmlString("#AA79FF", out var purple);
             Assert.That(Vector4.Distance(GameObject.Find("LobbyCharacter").GetComponentsInChildren<Renderer>().First(r => r.name.StartsWith("Hoodie")).sharedMaterial.color, purple), Is.LessThan(.005f));
         }
+        /// <summary>
+        /// Проверяет процент, звук и восстановление громкости после загрузки.
+        /// </summary>
+        /// <returns>Шаги проверки ползунка и повторного открытия Lobby.</returns>
         [UnityTest] public IEnumerator VolumeSliderUpdatesPercentageAndRestoresOnReload()
         {
             Find<Button>("TabSettings").onClick.Invoke();
@@ -98,6 +156,10 @@ namespace TinyTrouble.Tests
             Assert.That(AudioListener.volume, Is.EqualTo(.37f).Within(.001f));
             Assert.That(Find<Slider>("VolumeSlider").value, Is.EqualTo(.37f).Within(.001f));
         }
+        /// <summary>
+        /// Проверяет обход вперёд и назад клавишей Tab без скрытых элементов.
+        /// </summary>
+        /// <returns>Шаги проверки выделения элементов меню.</returns>
         [UnityTest] public IEnumerator KeyboardFocusCyclesOnlyVisibleControls()
         {
             Find<Button>("TabSettings").onClick.Invoke();
@@ -113,12 +175,17 @@ namespace TinyTrouble.Tests
             advance.Invoke(controller, new object[] { true }); yield return null;
             Assert.That(EventSystem.current.currentSelectedGameObject.name, Is.EqualTo("TabSettings"));
         }
+        /// <summary>
+        /// Нажимает мышью в точку четверти шкалы и проверяет изменение звука.
+        /// </summary>
+        /// <returns>Шаги проверки настоящего нажатия на ползунок.</returns>
         [UnityTest] public IEnumerator SliderTrackAcceptsPointerAndChangesVolume()
         {
             Find<Button>("TabSettings").onClick.Invoke(); yield return null;
             var slider = Find<Slider>("VolumeSlider"); var rect = (RectTransform)slider.transform;
             var position = RectTransformUtility.WorldToScreenPoint(null, rect.TransformPoint(new Vector3(rect.rect.xMin + rect.rect.width * .25f, 0, 0)));
             var data = new PointerEventData(EventSystem.current) { position = position, button = PointerEventData.InputButton.Left };
+            // Raycast — поиск интерфейсного элемента под указателем мыши в указанной точке.
             var hits = new System.Collections.Generic.List<RaycastResult>(); EventSystem.current.RaycastAll(data, hits);
             var hit = hits.FirstOrDefault(h => h.gameObject.transform.IsChildOf(slider.transform));
             Assert.That(hit.gameObject, Is.Not.Null, "Шкала громкости не принимает нажатия");
@@ -127,6 +194,10 @@ namespace TinyTrouble.Tests
             Assert.That(slider.value, Is.InRange(.2f, .3f));
             Assert.That(AudioListener.volume, Is.EqualTo(slider.value).Within(.001f));
         }
+        /// <summary>
+        /// Дважды нажимает «ИГРАТЬ» и ожидает одну загрузку с прежней громкостью.
+        /// </summary>
+        /// <returns>Шаги проверки с ограниченным временем ожидания уровня.</returns>
         [UnityTest] public IEnumerator RepeatedPlayLoadsSampleSceneOnceAndKeepsVolume()
         {
             Find<Button>("TabSettings").onClick.Invoke(); Find<Slider>("VolumeSlider").value = .37f;
@@ -135,6 +206,7 @@ namespace TinyTrouble.Tests
             var button = Find<Button>("PlayButton");
             button.onClick.Invoke(); button.onClick.Invoke();
             Assert.That(button.interactable, Is.False);
+            // Ждём не дольше 10 секунд, чтобы неисправная загрузка не оставила проверку висеть.
             var deadline = Time.realtimeSinceStartup + 10f;
             while (SceneManager.GetActiveScene().name != "SampleScene" && Time.realtimeSinceStartup < deadline) yield return null;
             yield return null;
