@@ -1,4 +1,4 @@
-# Unity-generated folders
+# Unity создаёт эти папки заново: кеш, временные файлы и готовые сборки.
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -10,12 +10,13 @@
 /[Rr]ecordings/
 /[Cc]odeCoverage/
 
-# IDE and generated project files
+# Личные файлы редакторов кода и автоматически созданные списки проектов.
 .vs/
 .idea/
 .gradle/
 *.csproj
 *.sln
+*.slnx
 *.suo
 *.user
 *.userprefs
@@ -26,22 +27,41 @@
 *.mdb
 *.opendb
 *.VC.db
-sysinfo.txt
 
-# Unity crash reports and packages
+# Файлы отладки и их служебные .meta не нужны для запуска игры.
+# Остальные .meta в Assets сохраняем: они связывают сцены с кодом и ресурсами.
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# Журналы, отчёты о сбоях и результаты автоматических проверок.
+/*.log
+/sysinfo.txt
+/mono_crash.*
+/crash.dmp
 *.stackdump
+/[Tt]est[Rr]esults/
+/[Tt]est[Rr]esults.xml
+/[Tt]est[Rr]esults-*.xml
+
+# Экспортированные пакеты и служебная папка старых инструментов Asset Store.
 *.unitypackage
 /Assets/AssetStoreTools*
 
-# Local tool settings and credentials
+# Личные настройки инструментов, временные записи помощника и секреты.
 /.agents/
 /.codex/
 /.aws/
+/.superpowers/sdd/
 .env
 .env.*
+# Пример настроек без настоящих секретов можно хранить в Git.
 !.env.example
 
-# Operating system files
+# Служебные файлы операционной системы.
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Assets, Packages и ProjectSettings должны оставаться в Git.
+# Не исключать все *.dll: установленные библиотеки в Assets/Plugins нужны проекту.
