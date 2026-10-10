@@ -43,6 +43,11 @@ namespace TinyTrouble.Tests
                 Assert.That(refs.arraySize, Is.EqualTo(2));
                 for (var i = 0; i < 2; i++) Assert.That(refs.GetArrayElementAtIndex(i).objectReferenceValue, Is.Not.Null, field);
             }
+            var life = hero.GetComponent("CharacterLife");
+            Assert.That(life, Is.Not.Null);
+            var lifeData = new SerializedObject(life);
+            foreach (var field in new[] { "gestures", "face" })
+                Assert.That(lifeData.FindProperty(field).objectReferenceValue, Is.Not.Null, field);
         }
 
         /// <summary>Две настройки подряд не должны сдвигать детали или создавать дубликаты групп.</summary>

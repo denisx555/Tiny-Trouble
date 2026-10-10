@@ -91,9 +91,10 @@ namespace TinyTrouble
                 var forward = Vector3.ProjectOnPlane(transform.TransformDirection(Vector3.back), Vector3.up);
                 if (Vector3.Angle(forward, towardCamera) <= 60.001f) target = pointerViewport * 2 - Vector2.one;
             }
-            gaze = Vector2.Lerp(gaze, target, 1 - Mathf.Exp(-12 * deltaTime));
             var ownsHead = gesture == CharacterGesture.LookAround || gesture == CharacterGesture.ColorReaction;
             var gazeWeight = ownsHead ? 1 - weight : 1;
+            // Во время движения головы взгляд тоже отдыхает, поэтому после жеста не возникает скачка.
+            gaze = Vector2.Lerp(gaze, target * gazeWeight, 1 - Mathf.Exp(-12 * deltaTime));
             if (headPivot)
             {
                 var pitch = gaze.y * 8 * gazeWeight;

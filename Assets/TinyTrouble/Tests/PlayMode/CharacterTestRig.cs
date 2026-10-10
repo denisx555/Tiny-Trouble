@@ -17,6 +17,8 @@ namespace TinyTrouble.Tests
         UnityEngine.Random.State randomState;
         /// <summary>Исходная скорость времени игры.</summary>
         float timeScale;
+        /// <summary>Проверки поведения оставляют обычное обновление Life включённым.</summary>
+        protected virtual bool FreezeLife => true;
 
         /// <summary>Загружает лобби и останавливает автоматические движения для точных измерений.</summary>
         /// <returns>Ожидание загрузки и первого кадра.</returns>
@@ -29,7 +31,7 @@ namespace TinyTrouble.Tests
             hero = GameObject.Find("LobbyCharacter");
             hero.GetComponent<CharacterIdle>().enabled = false;
             var life = hero.GetComponent("CharacterLife") as Behaviour;
-            if (life) life.enabled = false;
+            if (life && FreezeLife) life.enabled = false;
             UnityEngine.Random.InitState(12345);
         }
 

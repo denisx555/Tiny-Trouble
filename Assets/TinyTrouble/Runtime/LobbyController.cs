@@ -43,6 +43,10 @@ namespace TinyTrouble
         /// Компоненты, которые рисуют только части толстовки героя.
         /// </summary>
         [SerializeField] Renderer[] hoodieRenderers;
+        /// <summary>Получает сообщение только при выборе действительно другого цвета.</summary>
+        [SerializeField] CharacterLife characterLife;
+        /// <summary>Последний применённый номер цвета; восстановление при запуске не вызывает жест.</summary>
+        int currentColor;
         /// <summary>
         /// Сообщение возле кнопки запуска: готовность, загрузка или ошибка.
         /// </summary>
@@ -148,13 +152,20 @@ namespace TinyTrouble
         /// Сохраняет выбранный цвет и сразу меняет толстовку.
         /// </summary>
         /// <param name="index">Номер образца цвета от 0 до 3.</param>
-        public void SetHoodieColor(int index) => ApplyColor(LobbyPreferences.SaveHoodieColor(index));
+        public void SetHoodieColor(int index)
+        {
+            var normalized = LobbyPreferences.SaveHoodieColor(index);
+            var changed = normalized != currentColor;
+            ApplyColor(normalized);
+            if (changed && characterLife) characterLife.NotifyColorChanged();
+        }
         /// <summary>
         /// Окрашивает личные материалы героя и отмечает выбранный образец.
         /// </summary>
         /// <param name="index">Проверенный номер цвета от 0 до 3.</param>
         void ApplyColor(int index)
         {
+            currentColor = index;
             ColorUtility.TryParseHtmlString(HoodieHex[index], out var color);
             foreach (var material in ownedMaterials) material.color = color;
             for (var i = 0; i < colorButtons.Length; i++)

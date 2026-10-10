@@ -93,6 +93,17 @@ namespace TinyTrouble.Tests
             Assert.That(hero.transform.rotation, Is.EqualTo(rootRotation));
         }
 
+        /// <summary>После кивка взгляд возвращается постепенно, без скачка головы к мыши.</summary>
+        [Test] public void GazeReturnsSmoothlyAfterHeadGesture()
+        {
+            var face = Required("CharacterFace");
+            for (var i = 0; i < 100; i++) Pose(face, "Animate", "ColorReaction", .01f, .5f, 1f, true, Vector2.one, true, Camera.main);
+            Pose(face, "Animate", "ColorReaction", .01f, 1f, 1f, true, Vector2.one, true, Camera.main);
+            var before = Part("HeadPivot").localRotation;
+            Pose(face, "Animate", "None", .01f, 0f, 0f, true, Vector2.one, true, Camera.main);
+            Assert.That(Quaternion.Angle(before, Part("HeadPivot").localRotation), Is.LessThan(3f));
+        }
+
         /// <summary>Неполная пара глаз пропускается без повторных предупреждений; голова работает.</summary>
         [Test] public void MissingEyeLogsOnceAndHeadStillMoves()
         {

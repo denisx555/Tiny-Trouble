@@ -40,7 +40,7 @@ namespace TinyTrouble
         {
             // В старой системе ввода Unity номер -1 обозначает левую кнопку мыши.
             if (eventData.button == PointerEventData.InputButton.Left && eventData.pointerId == -1)
-                isDragging = true;
+                SetDragging(true);
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace TinyTrouble
         public void OnPointerUp(PointerEventData eventData)
         {
             if (eventData.button == PointerEventData.InputButton.Left && eventData.pointerId == -1)
-                isDragging = false;
+                SetDragging(false);
         }
 
         /// <summary>
@@ -80,17 +80,27 @@ namespace TinyTrouble
         /// Прекращает жест, если окно потеряло фокус и отпускание мыши могло быть пропущено.
         /// </summary>
         /// <param name="hasFocus">Получает ли окно игры ввод от пользователя.</param>
-        void OnApplicationFocus(bool hasFocus) { if (!hasFocus) isDragging = false; }
+        void OnApplicationFocus(bool hasFocus) { if (!hasFocus) SetDragging(false); }
 
         /// <summary>
         /// Прекращает жест при приостановке приложения.
         /// </summary>
         /// <param name="paused">Приостановлено ли приложение.</param>
-        void OnApplicationPause(bool paused) { if (paused) isDragging = false; }
+        void OnApplicationPause(bool paused) { if (paused) SetDragging(false); }
 
         /// <summary>
         /// Убирает незавершённое нажатие при отключении компонента или закрытии сцены.
         /// </summary>
-        void OnDisable() { isDragging = false; }
+        void OnDisable() { SetDragging(false); }
+
+        /// <summary>Передаёт Life только настоящее изменение нажатия, без повторного сброса таймера.</summary>
+        /// <param name="value">Новое состояние левой кнопки на герое.</param>
+        void SetDragging(bool value)
+        {
+            if (isDragging == value) return;
+            isDragging = value;
+            var life = GetComponent<CharacterLife>();
+            if (life) life.SetDragging(value);
+        }
     }
 }

@@ -427,6 +427,7 @@ namespace TinyTrouble.Editor
             Assign(so,"volumeSlider",slider);Assign(so,"volumeText",volumeText);AssignArray(so,"colorButtons",colorButtons);
             // Выбираем только детали с именем Hoodie, чтобы не менять цвет кожи и штанов.
             AssignArray(so,"hoodieRenderers",hero.GetComponentsInChildren<Renderer>().Where(r=>r.name.StartsWith("Hoodie")));
+            Assign(so,"characterLife",hero.GetComponent<CharacterLife>());
             so.ApplyModifiedPropertiesWithoutUndo();
             // В сохранённой сцене сразу оставляем открытой только вкладку «Играть».
             for(int i=0;i<3;i++)panels[i].SetActive(i==0);

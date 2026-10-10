@@ -41,7 +41,7 @@ namespace TinyTrouble.Tests
                     .Single(m => m != null && m.GetType().Name == "LobbyController");
                 // SerializedObject читает поля компонента так, как они сохранены в Inspector.
                 var so = new SerializedObject(controller);
-                foreach (var field in new[] { "panels", "tabs", "playButton", "volumeSlider", "volumeText", "colorButtons", "hoodieRenderers", "statusText" })
+                foreach (var field in new[] { "panels", "tabs", "playButton", "volumeSlider", "volumeText", "colorButtons", "hoodieRenderers", "statusText", "characterLife" })
                 {
                     var property = so.FindProperty(field);
                     Assert.That(property, Is.Not.Null, field);

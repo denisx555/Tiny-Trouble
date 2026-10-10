@@ -40,6 +40,9 @@ namespace TinyTrouble
                 new[] { parts.FirstOrDefault(t => t.name == "EyeWhite-1"), parts.FirstOrDefault(t => t.name == "EyeWhite1") },
                 new[] { parts.FirstOrDefault(t => t.name == "Pupil-1"), parts.FirstOrDefault(t => t.name == "Pupil1") },
                 new[] { parts.FirstOrDefault(t => t.name == "EyeShine-1"), parts.FirstOrDefault(t => t.name == "EyeShine1") });
+            var life = hero.GetComponent<CharacterLife>();
+            if (!life) life = hero.AddComponent<CharacterLife>();
+            life.Configure(gestures, face);
         }
 
         /// <summary>Находит существующую группу или создаёт её в заданной точке относительно корня.</summary>

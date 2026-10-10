@@ -3232,6 +3232,7 @@ MonoBehaviour:
   - {fileID: 1280029053}
   - {fileID: 1280029052}
   - {fileID: 1280029051}
+  characterLife: {fileID: 2018850401}
   statusText: {fileID: 1203658303}
   gameSceneName: SampleScene
 --- !u!114 &1170828966
@@ -5944,6 +5945,17 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &2018850401 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5860517707024047100, guid: 68599321850f6fc51b5ec4577a9dae06, type: 3}
+  m_PrefabInstance: {fileID: 1280029050}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41519b9d5231974c3ae61f0afb80222b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2035665678
 GameObject:
   m_ObjectHideFlags: 0
