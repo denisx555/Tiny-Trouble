@@ -147,23 +147,59 @@ namespace TinyTrouble.Tests
                     foreach (var text in panel.GetComponentsInChildren<Text>())
                         Assert.That(text.preferredHeight, Is.LessThanOrEqualTo(text.rectTransform.rect.height + 1), size + " обрезан текст " + text.name);
                     var hero = UnityEngine.Object.FindObjectOfType<CharacterIdle>();
+                    var life = hero.GetComponent<CharacterLife>();
+                    life.enabled = false;
+                    var gestures = hero.GetComponent<CharacterGestures>();
+                    var face = hero.GetComponent<CharacterFace>();
+                    var cameraPosition = Camera.main.transform.position;
+                    var cameraRotation = Camera.main.transform.rotation;
                     for (var angle = 0; angle < 4; angle++)
                     {
-                        var projected = hero.GetComponentsInChildren<Renderer>().SelectMany(renderer =>
+                        foreach (CharacterGesture gesture in Enum.GetValues(typeof(CharacterGesture)))
+                        foreach (var progress in new[] { 0f, .25f, .375f, .5f, .75f, .9f, 1f })
                         {
-                            var bounds = renderer.bounds;
-                            return Enumerable.Range(0, 8).Select(index => Camera.main.WorldToScreenPoint(bounds.center + Vector3.Scale(bounds.extents,
-                                new Vector3((index & 1) == 0 ? -1 : 1, (index & 2) == 0 ? -1 : 1, (index & 4) == 0 ? -1 : 1))));
-                        }).ToArray();
-                        var heroBounds = Rect.MinMaxRect(projected.Min(p => p.x), projected.Min(p => p.y), projected.Max(p => p.x), projected.Max(p => p.y));
-                        Inside(heroBounds, screen, size + " герой");
-                        foreach (var obstacle in blocks)
-                            Assert.That(heroBounds.Overlaps(Bounds(obstacle)), Is.False, size + " герой перекрывает " + obstacle.name + " при повороте " + angle * 90);
+                            gestures.ApplyPose(gesture, progress, 1, Mathf.PI * .5f);
+                            face.Animate(.1f, gesture, progress, 1, true, Vector2.one, true, Camera.main);
+                            var projected = hero.GetComponentsInChildren<Renderer>().SelectMany(renderer =>
+                            {
+                                var bounds = renderer.bounds;
+                                return Enumerable.Range(0, 8).Select(index => Camera.main.WorldToScreenPoint(bounds.center + Vector3.Scale(bounds.extents,
+                                    new Vector3((index & 1) == 0 ? -1 : 1, (index & 2) == 0 ? -1 : 1, (index & 4) == 0 ? -1 : 1))));
+                            }).ToArray();
+                            var heroBounds = Rect.MinMaxRect(projected.Min(p => p.x), projected.Min(p => p.y), projected.Max(p => p.x), projected.Max(p => p.y));
+                            Inside(heroBounds, screen, size + " герой");
+                            foreach (var obstacle in blocks)
+                                Assert.That(heroBounds.Overlaps(Bounds(obstacle)), Is.False, size + " герой перекрывает " + obstacle.name + " при повороте " + angle * 90);
+                            Assert.That(Camera.main.transform.position, Is.EqualTo(cameraPosition));
+                            Assert.That(Camera.main.transform.rotation, Is.EqualTo(cameraRotation));
+                        }
                         hero.Turn(90); yield return null;
                     }
+                    life.enabled = true;
+                    yield return null;
                     Assert.That(Bounds(panel).Overlaps(Bounds(Find("Header"))), Is.False, size + " панель перекрывает шапку");
                 }
             }
+        }
+
+        /// <summary>Перестройка камеры в середине жеста использует ту же область, что и исходная поза.</summary>
+        /// <returns>Ожидание применения размера и позднего обновления камеры.</returns>
+        [UnityTest] public IEnumerator ResizingAtDifferentPosesUsesSameCamera()
+        {
+            SetSize(720, 1280);
+            for (var i = 0; i < 8; i++) yield return null;
+            var hero = UnityEngine.Object.FindObjectOfType<CharacterIdle>(); hero.enabled = false;
+            hero.GetComponent<CharacterLife>().enabled = false;
+            var gestures = hero.GetComponent<CharacterGestures>();
+            var layout = UnityEngine.Object.FindObjectOfType<LobbyLayout>();
+            gestures.ResetPose();
+            layout.enabled = false; layout.enabled = true;
+            yield return null;
+            var before = Camera.main.transform.position;
+            gestures.ApplyPose(CharacterGesture.Wave, .5f, 1, Mathf.PI * .5f);
+            layout.enabled = false; layout.enabled = true;
+            yield return null;
+            Assert.That(Vector3.Distance(before, Camera.main.transform.position), Is.LessThan(.0001f), "Камера зависит от текущей позы героя");
         }
     }
 }

@@ -29,6 +29,14 @@ namespace TinyTrouble
                 else if (name.StartsWith("Hoodie") || name.StartsWith("Drawstring") || name == "Neck") parent = upper;
                 else parent = head;
                 part.transform.SetParent(parent, true);
+                // Отдельные области нажатия двигаются вместе с рукавами и кистями при взмахе.
+                if (parent == leftArm || parent == rightArm)
+                {
+                    var collider = part.GetComponent<BoxCollider>();
+                    if (!collider) collider = part.gameObject.AddComponent<BoxCollider>();
+                    var meshBounds = part.GetComponent<MeshFilter>().sharedMesh.bounds;
+                    collider.center = meshBounds.center; collider.size = meshBounds.size;
+                }
             }
             var gestures = hero.GetComponent<CharacterGestures>();
             if (!gestures) gestures = hero.AddComponent<CharacterGestures>();
@@ -43,6 +51,52 @@ namespace TinyTrouble
             var life = hero.GetComponent<CharacterLife>();
             if (!life) life = hero.AddComponent<CharacterLife>();
             life.Configure(gestures, face);
+            gestures.SetPoseBounds(CalculatePoseBounds(hero));
+        }
+
+        /// <summary>На временной копии измеряет все допустимые позы, не двигая сохранённого героя.</summary>
+        /// <param name="hero">Подготовленная модель с группами и компонентами.</param>
+        /// <returns>Постоянные границы в координатах корня, с запасом 0,12 с каждой стороны.</returns>
+        public static Bounds CalculatePoseBounds(GameObject hero)
+        {
+            var randomState = Random.state;
+            var copy = Object.Instantiate(hero);
+            var cameraObject = new GameObject("PoseBoundsCamera");
+            try
+            {
+                copy.hideFlags = HideFlags.HideAndDontSave;
+                copy.SetActive(false);
+                copy.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                copy.transform.localScale = Vector3.one;
+                cameraObject.hideFlags = HideFlags.HideAndDontSave;
+                var camera = cameraObject.AddComponent<Camera>(); camera.enabled = false;
+                camera.transform.position = new Vector3(0, 1, -5);
+                var gestures = copy.GetComponent<CharacterGestures>(); var face = copy.GetComponent<CharacterFace>();
+                var renderers = copy.GetComponentsInChildren<Renderer>(true);
+                var bounds = new Bounds(Vector3.zero, Vector3.zero);
+                foreach (CharacterGesture gesture in System.Enum.GetValues(typeof(CharacterGesture)))
+                    for (var step = 0; step <= 40; step++)
+                        foreach (var weight in new[] { 0f, .5f, 1f })
+                            foreach (var breath in new[] { -Mathf.PI * .5f, 0f, Mathf.PI * .5f })
+                                foreach (var pointer in new[] { Vector2.zero, Vector2.one, new Vector2(0, 1), new Vector2(1, 0) })
+                                {
+                                    if (gestures) gestures.ApplyPose(gesture, step / 40f, weight, breath);
+                                    if (face) face.Animate(1, gesture, step / 40f, weight, true, pointer, true, camera);
+                                    foreach (var renderer in renderers)
+                                    {
+                                        var area = renderer.bounds;
+                                        for (var corner = 0; corner < 8; corner++)
+                                        {
+                                            var point = area.center + Vector3.Scale(area.extents, new Vector3(
+                                                (corner & 1) == 0 ? -1 : 1, (corner & 2) == 0 ? -1 : 1, (corner & 4) == 0 ? -1 : 1));
+                                            bounds.Encapsulate(copy.transform.InverseTransformPoint(point));
+                                        }
+                                    }
+                                }
+                bounds.Expand(.24f);
+                return bounds;
+            }
+            finally { Object.DestroyImmediate(copy); Object.DestroyImmediate(cameraObject); Random.state = randomState; }
         }
 
         /// <summary>Находит существующую группу или создаёт её в заданной точке относительно корня.</summary>

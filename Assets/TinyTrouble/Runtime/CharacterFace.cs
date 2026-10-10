@@ -92,8 +92,10 @@ namespace TinyTrouble
                 if (Vector3.Angle(forward, towardCamera) <= 60.001f) target = pointerViewport * 2 - Vector2.one;
             }
             var ownsHead = gesture == CharacterGesture.LookAround || gesture == CharacterGesture.ColorReaction;
-            var gazeWeight = ownsHead ? 1 - weight : 1;
-            // Во время движения головы взгляд тоже отдыхает, поэтому после жеста не возникает скачка.
+            // В начале жеста плавно передаём ему голову и глаза за первую восьмую движения.
+            var ownership = weight * Mathf.SmoothStep(0, 1, progress / .125f);
+            var gazeWeight = ownsHead ? 1 - ownership : 1;
+            // Пока жест управляет головой, взгляд отдыхает; после него снова плавно ищет мышь.
             gaze = Vector2.Lerp(gaze, target * gazeWeight, 1 - Mathf.Exp(-12 * deltaTime));
             if (headPivot)
             {

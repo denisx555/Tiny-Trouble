@@ -153,14 +153,23 @@ namespace TinyTrouble
             TextBox("VolumeHint", 24, 8, contentWidth, 48, 14, TextAnchor.MiddleCenter);
         }
 
-        /// <summary>Отодвигает камеру и смещает её так, чтобы вращающийся герой помещался в свободной области.</summary>
+        /// <summary>Подбирает расстояние по постоянной области всех поз, поэтому жесты не качают камеру.</summary>
         /// <param name="area">Свободная область между текстом, шапкой и панелью.</param>
         /// <param name="width">Ширина интерфейса.</param>
         /// <param name="height">Высота интерфейса.</param>
         void FitCamera(Rect area, float width, float height)
         {
             var bounds = new Bounds(hero.position, Vector3.zero);
-            foreach (var renderer in hero.GetComponentsInChildren<Renderer>()) bounds.Encapsulate(renderer.bounds);
+            var gestures = hero.GetComponent<CharacterGestures>();
+            if (gestures && gestures.PoseBounds.size.sqrMagnitude > .01f)
+            {
+                // Поворот покрывается радиусом ниже; текущая поза и угол героя не меняют область.
+                var local = gestures.PoseBounds;
+                var scale = hero.lossyScale;
+                scale = new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z));
+                bounds = new Bounds(hero.position + Vector3.Scale(local.center, scale), Vector3.Scale(local.size, scale));
+            }
+            else foreach (var renderer in hero.GetComponentsInChildren<Renderer>()) bounds.Encapsulate(renderer.bounds);
             // Запас по ширине учитывает вращение, по высоте — лёгкое покачивание персонажа.
             var reachX = Mathf.Max(Mathf.Abs(bounds.min.x - hero.position.x), Mathf.Abs(bounds.max.x - hero.position.x));
             var reachZ = Mathf.Max(Mathf.Abs(bounds.min.z - hero.position.z), Mathf.Abs(bounds.max.z - hero.position.z));

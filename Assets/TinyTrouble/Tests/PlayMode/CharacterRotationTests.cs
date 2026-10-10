@@ -209,6 +209,43 @@ namespace TinyTrouble.Tests
             Assert.That(AudioListener.volume, Is.EqualTo(slider.value).Within(.001f));
         }
 
+        /// <summary>Нажатие на вытянутую кисть настоящим лучом начинает вращение спереди и сзади.</summary>
+        /// <returns>Кадры после движения мыши, чтобы проверить поворот корня.</returns>
+        [UnityTest] public IEnumerator WavingHandReceivesDragThroughRaycast()
+        {
+            var hero = GameObject.Find("LobbyCharacter");
+            var idle = hero.GetComponent<CharacterIdle>();
+            hero.GetComponent<CharacterLife>().enabled = false;
+            var hand = hero.GetComponentsInChildren<Transform>().Single(t => t.name == "RightHand");
+            foreach (var angle in new[] { 0f, 180f })
+                foreach (var gesture in new[] { CharacterGesture.Wave, CharacterGesture.Greeting })
+                {
+                    idle.enabled = false;
+                    hero.transform.rotation = Quaternion.Euler(0, angle, 0);
+                    hero.GetComponent<CharacterGestures>().ApplyPose(gesture, .5f, 1, Mathf.PI * .5f);
+                    Physics.SyncTransforms();
+                    var data = new PointerEventData(EventSystem.current)
+                    {
+                        position = Camera.main.WorldToScreenPoint(hand.position),
+                        button = PointerEventData.InputButton.Left, pointerId = -1
+                    };
+                    var hits = new List<RaycastResult>();
+                    EventSystem.current.RaycastAll(data, hits);
+                    Assert.That(hits.Count, Is.GreaterThan(0), "Машущая кисть не принимает нажатие");
+                    var handler = ExecuteEvents.GetEventHandler<IDragHandler>(hits[0].gameObject);
+                    Assert.That(handler, Is.EqualTo(hero), "Нажатие на кисть не дошло до вращения героя");
+                    ExecuteEvents.ExecuteHierarchy(hits[0].gameObject, data, ExecuteEvents.pointerDownHandler);
+                    Assert.That(hero.GetComponent<CharacterLife>().IsDragging, Is.True);
+                    idle.enabled = true;
+                    var before = hero.transform.eulerAngles.y;
+                    data.delta = Vector2.right * Screen.width * .25f;
+                    ExecuteEvents.Execute(handler, data, ExecuteEvents.dragHandler);
+                    yield return null;
+                    Assert.That(Mathf.Abs(Mathf.DeltaAngle(before, hero.transform.eulerAngles.y)), Is.GreaterThan(30f));
+                    ExecuteEvents.Execute(handler, data, ExecuteEvents.pointerUpHandler);
+                }
+        }
+
         /// <summary>
         /// Проверяет прекращение жеста при потере фокуса окна.
         /// </summary>

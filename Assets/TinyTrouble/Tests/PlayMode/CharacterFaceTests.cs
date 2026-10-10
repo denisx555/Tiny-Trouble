@@ -93,6 +93,22 @@ namespace TinyTrouble.Tests
             Assert.That(hero.transform.rotation, Is.EqualTo(rootRotation));
         }
 
+        /// <summary>Перед кивком и оглядыванием взгляд уступает место жесту без резкого скачка.</summary>
+        /// <param name="gesture">Жест, который начинает управлять головой.</param>
+        [TestCase("ColorReaction")] [TestCase("LookAround")]
+        public void GazeYieldsSmoothlyAtHeadGestureStart(string gesture)
+        {
+            var face = Required("CharacterFace");
+            for (var i = 0; i < 20; i++) Pose(face, "Animate", "None", .05f, 0f, 0f, true, Vector2.one, true, Camera.main);
+            var before = Part("HeadPivot").localRotation;
+            var pupil = Part("Pupil-1").localPosition;
+            Pose(face, "Animate", gesture, .01f, 0f, 1f, true, Vector2.one, true, Camera.main);
+            Assert.That(Quaternion.Angle(before, Part("HeadPivot").localRotation), Is.LessThan(3f));
+            Assert.That(Vector3.Distance(pupil, Part("Pupil-1").localPosition), Is.LessThan(.005f));
+            Pose(face, "Animate", gesture, .01f, .01f, 1f, true, Vector2.one, true, Camera.main);
+            Assert.That(Quaternion.Angle(before, Part("HeadPivot").localRotation), Is.LessThan(3f));
+        }
+
         /// <summary>После кивка взгляд возвращается постепенно, без скачка головы к мыши.</summary>
         [Test] public void GazeReturnsSmoothlyAfterHeadGesture()
         {

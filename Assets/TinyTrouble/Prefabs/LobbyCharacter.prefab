@@ -928,6 +928,7 @@ GameObject:
   - component: {fileID: 3222020011693436666}
   - component: {fileID: 1863157745989617753}
   - component: {fileID: 2433785332291987489}
+  - component: {fileID: 3340210732575098046}
   m_Layer: 0
   m_Name: HoodieLeftSleeve
   m_TagString: Untagged
@@ -1000,6 +1001,27 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &3340210732575098046
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2851281691327708534}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 2, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &3037666704401647425
 GameObject:
   m_ObjectHideFlags: 0
@@ -1129,6 +1151,7 @@ GameObject:
   - component: {fileID: 6267397812490288900}
   - component: {fileID: 6201651824033781150}
   - component: {fileID: 7816435946536365696}
+  - component: {fileID: 4705486029835615207}
   m_Layer: 0
   m_Name: LeftHand
   m_TagString: Untagged
@@ -1201,6 +1224,27 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &4705486029835615207
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3308336403556843466}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &3348075383744358389
 GameObject:
   m_ObjectHideFlags: 0
@@ -2220,8 +2264,8 @@ MonoBehaviour:
   leftFoot: {fileID: 1518778914936918395}
   rightFoot: {fileID: 3720161979752367194}
   poseBounds:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+    m_Center: {x: 0.23552096, y: 1.3982505, z: -0.014716208}
+    m_Extent: {x: 1.2074114, y: 1.5202113, z: 0.82695407}
 --- !u!114 &6316131972024564643
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2352,6 +2396,7 @@ GameObject:
   - component: {fileID: 4201549354151811040}
   - component: {fileID: 2129379904630715947}
   - component: {fileID: 750678121123722748}
+  - component: {fileID: 9202931647576189231}
   m_Layer: 0
   m_Name: HoodieRightSleeve
   m_TagString: Untagged
@@ -2424,6 +2469,27 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &9202931647576189231
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6802544628180660040}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 2, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &7106290418299542747
 GameObject:
   m_ObjectHideFlags: 0
@@ -2957,6 +3023,7 @@ GameObject:
   - component: {fileID: 196961996738095386}
   - component: {fileID: 6395219122401147370}
   - component: {fileID: 5519918774496758737}
+  - component: {fileID: 3020726073513534850}
   m_Layer: 0
   m_Name: RightHand
   m_TagString: Untagged
@@ -3029,6 +3096,27 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &3020726073513534850
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7735316628040225043}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &7863858226020209602
 GameObject:
   m_ObjectHideFlags: 0

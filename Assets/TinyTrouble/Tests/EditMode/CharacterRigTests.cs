@@ -74,5 +74,38 @@ namespace TinyTrouble.Tests
             }
             finally { UnityEngine.Object.DestroyImmediate(hero); }
         }
+
+        /// <summary>Сохранённая область охватывает крайние и промежуточные позы, включая дыхание.</summary>
+        [Test] public void PoseBoundsContainsMotionExtremes()
+        {
+            var hero = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath));
+            var randomState = UnityEngine.Random.state;
+            try
+            {
+                ConfigureMethod().Invoke(null, new object[] { hero });
+                var gestures = hero.GetComponent<CharacterGestures>(); var face = hero.GetComponent<CharacterFace>();
+                var saved = gestures.PoseBounds;
+                Assert.That(saved.size.sqrMagnitude, Is.GreaterThan(1), "Область всех поз ещё не рассчитана");
+                foreach (CharacterGesture gesture in Enum.GetValues(typeof(CharacterGesture)))
+                    for (var phase = 0; phase <= 50; phase++)
+                        foreach (var weight in new[] { 0f, .5f, 1f })
+                            foreach (var breath in new[] { -Mathf.PI * .5f, Mathf.PI * .5f })
+                            {
+                                var progress = Mathf.Min(1, phase / 50f + .003f);
+                                gestures.ApplyPose(gesture, progress, weight, breath);
+                                face.Animate(1, gesture, progress, weight, false, Vector2.zero, false, null);
+                                foreach (var renderer in hero.GetComponentsInChildren<Renderer>())
+                                    for (var corner = 0; corner < 8; corner++)
+                                    {
+                                        var b = renderer.bounds;
+                                        var point = hero.transform.InverseTransformPoint(b.center + Vector3.Scale(b.extents,
+                                            new Vector3((corner & 1) == 0 ? -1 : 1, (corner & 2) == 0 ? -1 : 1, (corner & 4) == 0 ? -1 : 1)));
+                                        Assert.That(saved.Contains(point), Is.True, gesture + " " + renderer.name + " " + progress);
+                                    }
+                            }
+                Assert.That(gestures.PoseBounds, Is.EqualTo(saved));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(hero); UnityEngine.Random.state = randomState; }
+        }
     }
 }
