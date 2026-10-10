@@ -203,6 +203,9 @@ Unity загружает зависимости по [Packages/manifest.json](Pa
 
 - [Описание лобби](docs/superpowers/specs/2026-10-10-lobby-design.md) — согласованный
   вид, поведение и требования к первой версии.
+- [Живой персонаж](docs/superpowers/specs/2026-10-10-character-life-design.md) —
+  проект следующего изменения: жесты, моргание и реакции в лобби.
+  Эти возможности пока не реализованы.
 - [План реализации](docs/superpowers/plans/2026-10-10-lobby.md) — этапы работы
   и учебное задание.
 - [Отчёт проверки](docs/superpowers/reports/2026-10-10-lobby-validation.md) —
