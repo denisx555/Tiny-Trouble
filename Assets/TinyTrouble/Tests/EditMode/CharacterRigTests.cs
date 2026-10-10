@@ -33,6 +33,16 @@ namespace TinyTrouble.Tests
                 Assert.That(so.FindProperty(field).objectReferenceValue, Is.Not.Null, field);
             foreach (var name in new[] { "UpperBodyPivot", "HeadPivot", "LeftArmPivot", "RightArmPivot", "LeftFootPivot", "RightFootPivot" })
                 Assert.That(hero.GetComponentsInChildren<Transform>(true).Count(t => t.name == name), Is.EqualTo(1), name);
+            var face = hero.GetComponent("CharacterFace");
+            Assert.That(face, Is.Not.Null);
+            var faceData = new SerializedObject(face);
+            Assert.That(faceData.FindProperty("headPivot").objectReferenceValue, Is.Not.Null);
+            foreach (var field in new[] { "eyeWhites", "pupils", "eyeShines" })
+            {
+                var refs = faceData.FindProperty(field);
+                Assert.That(refs.arraySize, Is.EqualTo(2));
+                for (var i = 0; i < 2; i++) Assert.That(refs.GetArrayElementAtIndex(i).objectReferenceValue, Is.Not.Null, field);
+            }
         }
 
         /// <summary>Две настройки подряд не должны сдвигать детали или создавать дубликаты групп.</summary>

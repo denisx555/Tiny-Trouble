@@ -33,6 +33,13 @@ namespace TinyTrouble
             var gestures = hero.GetComponent<CharacterGestures>();
             if (!gestures) gestures = hero.AddComponent<CharacterGestures>();
             gestures.Configure(upper, leftArm, rightArm, leftFoot, rightFoot);
+            var face = hero.GetComponent<CharacterFace>();
+            if (!face) face = hero.AddComponent<CharacterFace>();
+            var parts = hero.GetComponentsInChildren<Transform>(true);
+            face.Configure(head,
+                new[] { parts.FirstOrDefault(t => t.name == "EyeWhite-1"), parts.FirstOrDefault(t => t.name == "EyeWhite1") },
+                new[] { parts.FirstOrDefault(t => t.name == "Pupil-1"), parts.FirstOrDefault(t => t.name == "Pupil1") },
+                new[] { parts.FirstOrDefault(t => t.name == "EyeShine-1"), parts.FirstOrDefault(t => t.name == "EyeShine1") });
         }
 
         /// <summary>Находит существующую группу или создаёт её в заданной точке относительно корня.</summary>

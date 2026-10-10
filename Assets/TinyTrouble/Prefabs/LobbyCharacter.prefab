@@ -2127,6 +2127,7 @@ GameObject:
   - component: {fileID: 2728151192781728711}
   - component: {fileID: 1153958749584931107}
   - component: {fileID: 3041085182911478254}
+  - component: {fileID: 6316131972024564643}
   m_Layer: 0
   m_Name: LobbyCharacter
   m_TagString: Untagged
@@ -2220,6 +2221,28 @@ MonoBehaviour:
   poseBounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
+--- !u!114 &6316131972024564643
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6158157583452114874}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9bcf5899769abb4c8dae8b4c04fd350, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  headPivot: {fileID: 7728014989017726543}
+  eyeWhites:
+  - {fileID: 6331289728551277526}
+  - {fileID: 5660946552705162711}
+  pupils:
+  - {fileID: 5170378701322027670}
+  - {fileID: 8605634911545206414}
+  eyeShines:
+  - {fileID: 2943493998921263645}
+  - {fileID: 6910841001153676303}
 --- !u!1 &6552342268770570285
 GameObject:
   m_ObjectHideFlags: 0
