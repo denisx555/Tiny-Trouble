@@ -97,6 +97,23 @@ namespace TinyTrouble
             if ((gesture == CharacterGesture.Wave || gesture == CharacterGesture.Greeting) && rightArm)
                 rightArm.localRotation = rotations[2] * Quaternion.Euler(0, 0,
                     (55 + Mathf.Sin(progress * Mathf.PI * 6) * 12) * strength);
+            if (gesture >= CharacterGesture.DanceRobot)
+            {
+                var beat = Mathf.Sin(progress * Mathf.PI * 8);
+                var left = 0f; var right = 0f; var tilt = 0f; var lift = 0f;
+                if (gesture == CharacterGesture.DanceRobot)
+                { var step = Mathf.Round(beat * 4) / 4; left = -45 - step * 25; right = 45 - step * 25; tilt = step * 5; }
+                if (gesture == CharacterGesture.DanceSpring)
+                { left = -20 - beat * 15; right = 20 + beat * 15; lift = beat * .05f; }
+                if (gesture == CharacterGesture.DanceVictory)
+                { left = -110 - beat * 12; right = 110 + beat * 12; tilt = beat * 6; }
+                if (upperBody)
+                { upperBody.localPosition += Vector3.up * lift * strength; upperBody.localRotation = rotations[0] * Quaternion.Euler(0, 0, tilt * strength); }
+                if (leftArm) leftArm.localRotation = rotations[1] * Quaternion.Euler(0, 0, left * strength);
+                if (rightArm) rightArm.localRotation = rotations[2] * Quaternion.Euler(0, 0, right * strength);
+                if (leftFoot) leftFoot.localRotation = rotations[3] * Quaternion.Euler(-Mathf.Max(0, beat) * 8 * strength, 0, 0);
+                if (rightFoot) rightFoot.localRotation = rotations[4] * Quaternion.Euler(-Mathf.Max(0, -beat) * 8 * strength, 0, 0);
+            }
         }
 
         /// <summary>Не оставляет согнутые части после отключения компонента.</summary>

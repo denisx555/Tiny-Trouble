@@ -23,6 +23,8 @@ namespace TinyTrouble
         float fadeElapsed, fadeProgress;
         /// <summary>Начиналось ли поведение, ожидается ли реакция на цвет, заканчивается ли прерванный жест.</summary>
         bool initialized, pendingColor, fading;
+        /// <summary>Повторяет только явно запрошенный танец, пока игрок его не прервёт.</summary>
+        bool danceLoop;
         /// <summary>Не повторяет предупреждение об отсутствии компонента каждый кадр.</summary>
         bool warned;
         /// <summary>Номер последнего случайного жеста, чтобы не выбирать его снова.</summary>
@@ -32,6 +34,22 @@ namespace TinyTrouble
         public CharacterGesture CurrentGesture { get; private set; }
         /// <summary>Зажата ли левая кнопка на герое; вращение имеет высший приоритет.</summary>
         public bool IsDragging { get; private set; }
+        /// <summary>Выполняется ли один из трёх танцев, включая его плавное завершение.</summary>
+        public bool IsDancing => CurrentGesture >= CharacterGesture.DanceRobot;
+
+        /// <summary>Запускает танец, если вращение или реакция на одежду не занимают героя.</summary>
+        /// <param name="dance">Один из трёх жестов танца.</param>
+        /// <returns>Получилось ли начать танец.</returns>
+        public bool TryStartDance(CharacterGesture dance)
+        {
+            Initialize();
+            if (IsDragging || pendingColor || CurrentGesture == CharacterGesture.ColorReaction
+                || dance < CharacterGesture.DanceRobot || dance > CharacterGesture.DanceVictory) return false;
+            Begin(dance, 3); danceLoop = true; return true;
+        }
+
+        /// <summary>Прекращает повторение и плавно возвращает позу за 0,2 секунды.</summary>
+        public void StopDance() { if (IsDancing) Interrupt(); }
 
         /// <summary>Сохраняет ссылки на части поведения в шаблоне героя.</summary>
         /// <param name="gestures">Движения тела и конечностей.</param>
@@ -72,6 +90,7 @@ namespace TinyTrouble
         /// <summary>Замораживает позу крупного жеста и начинает плавный возврат за 0,2 секунды.</summary>
         void Interrupt()
         {
+            danceLoop = false;
             if (CurrentGesture == CharacterGesture.None || fading) return;
             fading = true; fadeElapsed = 0; fadeProgress = Mathf.Clamp01(elapsed / duration);
         }
@@ -80,12 +99,12 @@ namespace TinyTrouble
         /// <param name="gesture">Новый жест.</param>
         /// <param name="seconds">Его продолжительность в секундах.</param>
         void Begin(CharacterGesture gesture, float seconds)
-        { CurrentGesture = gesture; duration = seconds; elapsed = 0; fading = false; }
+        { CurrentGesture = gesture; duration = seconds; elapsed = 0; fading = false; danceLoop = false; }
 
         /// <summary>Заканчивает жест и назначает новую паузу после его завершения.</summary>
         void Finish()
         {
-            CurrentGesture = CharacterGesture.None; elapsed = 0; fading = false;
+            CurrentGesture = CharacterGesture.None; elapsed = 0; fading = false; danceLoop = false;
             idleWait = Random.Range(MinimumIdleDelay, MaximumIdleDelay);
         }
 
@@ -97,6 +116,7 @@ namespace TinyTrouble
         public void Advance(float deltaTime, Vector2 pointerViewport, bool hasFocus, Camera camera)
         {
             Initialize(); deltaTime = Mathf.Max(0, deltaTime);
+            if (!hasFocus) StopDance();
             breathingPhase = Mathf.Repeat(breathingPhase + deltaTime * Mathf.PI * 2 / 3, Mathf.PI * 2);
             var finishedThisStep = false;
             if (fading)
@@ -107,7 +127,11 @@ namespace TinyTrouble
             else if (CurrentGesture != CharacterGesture.None)
             {
                 elapsed += deltaTime;
-                if (elapsed >= duration) { Finish(); finishedThisStep = true; }
+                if (elapsed >= duration)
+                {
+                    if (danceLoop) elapsed = Mathf.Repeat(elapsed, duration);
+                    else { Finish(); finishedThisStep = true; }
+                }
             }
             if (CurrentGesture == CharacterGesture.None && !IsDragging)
             {
@@ -136,10 +160,14 @@ namespace TinyTrouble
             Advance(Time.unscaledDeltaTime, pointer, Application.isFocused, lobbyCamera);
         }
 
+        /// <summary>Уход из окна прекращает танец даже между обновлениями игры.</summary>
+        /// <param name="focus">Остался ли фокус у игры.</param>
+        void OnApplicationFocus(bool focus) { if (!focus) StopDance(); }
+
         /// <summary>Очищает состояния и позы; повторное включение не повторяет приветствие.</summary>
         void OnDisable()
         {
-            IsDragging = false; pendingColor = false; fading = false; CurrentGesture = CharacterGesture.None;
+            IsDragging = false; pendingColor = false; fading = false; danceLoop = false; CurrentGesture = CharacterGesture.None;
             elapsed = 0; breathingPhase = 0; idleWait = Random.Range(MinimumIdleDelay, MaximumIdleDelay);
             if (gestures) gestures.ResetPose();
             if (face) face.ResetPose();

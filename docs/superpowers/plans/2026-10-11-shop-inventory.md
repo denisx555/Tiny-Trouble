@@ -301,7 +301,7 @@ CharacterRigTests, prefab героя по таблице файлов.
 - `CharacterDance.Configure(CharacterLife life): void`, `bool Preview(string id)`, `void Stop()`; map robot/spring/victory на эти жесты.
 - Одна петля танца — 3 секунды на unscaled time; плавное завершение за существующие .2 секунды, от исходных поз без накопления.
 
-- [ ] **1. Написать тесты.** `ThreeDancesHaveDistinctMovingPoses`:
+- [x] **1. Написать тесты.** `ThreeDancesHaveDistinctMovingPoses`:
   в середине цикла robot/spring/victory позы различны и меняются во времени;
   рукав и кисть сохраняют связь при всех позах. `DanceRetainsBreathingBlink`:
   тело поднимается между фазами вдоха, оба глаза моргают при танце.
@@ -320,19 +320,19 @@ CharacterRigTests, prefab героя по таблице файлов.
   Затем продвинуть существующий CharacterLife.Advance на .21с:
   `Assert.That(life.CurrentGesture, Is.EqualTo(CharacterGesture.None));`.
   Связь кисти дополнительно сравнить по позиции относительно рукава до/после.
-- [ ] **2. Запустить `CharacterDanceTests` PlayMode и `CharacterRigTests`
+- [x] **2. Запустить `CharacterDanceTests` PlayMode и `CharacterRigTests`
   EditMode.** Сохранить конкретную недостающую реакцию/позу.
-- [ ] **3. Реализовать танцы.** Robot — чередование угловатых поворотов
+- [x] **3. Реализовать танцы.** Robot — чередование угловатых поворотов
   рук/корпуса; Spring — приседание/выпрямление и небольшой подъём;
   Victory — поднятые руки и наклон корпуса. Амплитуды подобрать внутри
   обновлённых постоянных PoseBounds, не отсоединяя плечо. CharacterLife
   управляет циклом/приоритетом, CharacterFace продолжает моргание;
   CharacterDance не меняет Transform суставов сам.
-- [ ] **4. Точечно обновить prefab и границы через CharacterRigBuilder.**
+- [x] **4. Точечно обновить prefab и границы через CharacterRigBuilder.**
   Не пересоздавать сцену/модель и не менять ShoulderHeight=1.50f.
-- [ ] **5. Повторить новые тесты и прежние CharacterLife/Gestures/FaceTests.**
+- [x] **5. Повторить новые тесты и прежние CharacterLife/Gestures/FaceTests.**
   Проверить возвращение дыхания и жестов после каждого способа остановки.
-- [ ] **6. Коммит:** `Добавить просмотр трёх танцев героя`.
+- [x] **6. Коммит:** `Добавить просмотр трёх танцев героя`.
 
 ### Task 6: Временный просмотр предметов, питомцев и следов
 

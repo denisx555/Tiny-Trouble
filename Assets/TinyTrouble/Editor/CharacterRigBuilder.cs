@@ -54,6 +54,9 @@ namespace TinyTrouble
             var life = hero.GetComponent<CharacterLife>();
             if (!life) life = hero.AddComponent<CharacterLife>();
             life.Configure(gestures, face);
+            var dance = hero.GetComponent<CharacterDance>();
+            if (!dance) dance = hero.AddComponent<CharacterDance>();
+            dance.Configure(life);
             gestures.SetPoseBounds(CalculatePoseBounds(hero));
         }
 

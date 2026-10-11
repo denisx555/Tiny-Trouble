@@ -14,6 +14,12 @@ namespace TinyTrouble
         /// <summary>Весёлый взмах рукой.</summary>
         Wave,
         /// <summary>Взгляд на новую одежду и довольный кивок.</summary>
-        ColorReaction
+        ColorReaction,
+        /// <summary>Танец с угловатыми движениями робота.</summary>
+        DanceRobot,
+        /// <summary>Пружинистый танец с небольшими подъёмами тела.</summary>
+        DanceSpring,
+        /// <summary>Танец победителя с поднятыми руками.</summary>
+        DanceVictory
     }
 }

@@ -2173,6 +2173,7 @@ GameObject:
   - component: {fileID: 3041085182911478254}
   - component: {fileID: 6316131972024564643}
   - component: {fileID: 5860517707024047100}
+  - component: {fileID: 6331215360136935549}
   m_Layer: 0
   m_Name: LobbyCharacter
   m_TagString: Untagged
@@ -2264,8 +2265,8 @@ MonoBehaviour:
   leftFoot: {fileID: 1518778914936918395}
   rightFoot: {fileID: 3720161979752367194}
   poseBounds:
-    m_Center: {x: 0.1967535, y: 1.4042505, z: -0.015007615}
-    m_Extent: {x: 1.1854795, y: 1.5262114, z: 0.8409532}
+    m_Center: {x: 0, y: 1.403383, z: -0.015007615}
+    m_Extent: {x: 1.4235145, y: 1.527079, z: 0.8409532}
 --- !u!114 &6316131972024564643
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2302,6 +2303,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gestures: {fileID: 3041085182911478254}
   face: {fileID: 6316131972024564643}
+--- !u!114 &6331215360136935549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6158157583452114874}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef6c94993c7d01b18aad3002718d6a77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  life: {fileID: 5860517707024047100}
 --- !u!1 &6552342268770570285
 GameObject:
   m_ObjectHideFlags: 0

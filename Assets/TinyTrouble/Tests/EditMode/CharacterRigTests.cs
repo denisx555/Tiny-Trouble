@@ -48,6 +48,9 @@ namespace TinyTrouble.Tests
             var lifeData = new SerializedObject(life);
             foreach (var field in new[] { "gestures", "face" })
                 Assert.That(lifeData.FindProperty(field).objectReferenceValue, Is.Not.Null, field);
+            var dance = hero.GetComponent<CharacterDance>();
+            Assert.That(dance, Is.Not.Null);
+            Assert.That(new SerializedObject(dance).FindProperty("life").objectReferenceValue, Is.EqualTo(life));
         }
 
         /// <summary>Две настройки подряд не должны сдвигать детали или создавать дубликаты групп.</summary>
