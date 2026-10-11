@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,6 +10,92 @@ namespace TinyTrouble.EditorTools
     {
         /// <summary>Папка собственных косметических ассетов игры.</summary>
         public const string Root = "Assets/TinyTrouble/Cosmetics";
+        /// <summary>Создаёт собственные картинки, материалы и модели товаров.</summary>
+        /// <param name="catalog">Каталог, в который записываются визуальные ссылки.</param>
+        public static void BuildVisuals(CosmeticCatalog catalog)
+        {
+            foreach (var folder in new[] { "Materials", "Textures", "Models", "Icons" }) Directory.CreateDirectory(Root + "/" + folder);
+            AssetDatabase.Refresh();
+            foreach (var item in catalog.Items)
+            {
+                var materialPath = Root + "/Materials/" + item.Id + ".mat";
+                var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+                if (!material) { material = new Material(Shader.Find("Standard")); AssetDatabase.CreateAsset(material, materialPath); }
+                material.color = item.BasicColorIndex >= 0 ? CosmeticTextureBuilder.Tint(item) : Color.white;
+                material.SetFloat("_Glossiness", .25f);
+                if (item.BasicColorIndex < 0)
+                {
+                    var texture = CosmeticTextureBuilder.Draw(item);
+                    var path = Root + "/Textures/" + item.Id + ".png";
+                    File.WriteAllBytes(path, texture.EncodeToPNG());
+                    Object.DestroyImmediate(texture);
+                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                    var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                    importer.wrapMode = TextureWrapMode.Repeat;
+                    importer.textureType = TextureImporterType.Default;
+                    importer.SaveAndReimport();
+                    material.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                }
+                else material.mainTexture = null;
+                item.Material = material;
+                EditorUtility.SetDirty(material);
+                var model = CosmeticModelBuilder.Create(item, material);
+                try
+                {
+                    if (item.Category != CosmeticCategory.Clothes && item.Category != CosmeticCategory.Dance)
+                        item.PreviewPrefab = PrefabUtility.SaveAsPrefabAsset(model, Root + "/Models/" + item.Id + ".prefab");
+                    if (item.Category == CosmeticCategory.Clothes)
+                    {
+                        var appearance = model.AddComponent<CharacterAppearance>();
+                        appearance.Configure(model.GetComponentsInChildren<Renderer>().Where(r => r.name.StartsWith("Hoodie")).ToArray());
+                        appearance.Apply(item);
+                    }
+                    item.Icon = RenderIcon(item, model);
+                }
+                finally { Object.DestroyImmediate(model); }
+            }
+            EditorUtility.SetDirty(catalog);
+            AssetDatabase.SaveAssets();
+        }
+        /// <summary>Снимает маленькое изображение объёмного товара в отдельную текстуру.</summary>
+        /// <param name="item">Товар с постоянным именем файла.</param>
+        /// <param name="model">Временная модель для фотографии.</param>
+        /// <returns>Сохранённая картинка карточки.</returns>
+        static Sprite RenderIcon(CosmeticItem item, GameObject model)
+        {
+            var cameraObject = new GameObject("CosmeticIconCamera");
+            var lightObject = new GameObject("CosmeticIconLight");
+            var rt = RenderTexture.GetTemporary(256, 256, 24);
+            var before = RenderTexture.active;
+            var picture = new Texture2D(256, 256, TextureFormat.RGBA32, false);
+            try
+            {
+                model.transform.position = new Vector3(1000, 1000, 1000);
+                foreach (var child in model.GetComponentsInChildren<Transform>()) child.gameObject.layer = 31;
+                var surfaces = model.GetComponentsInChildren<Renderer>();
+                var bounds = surfaces[0].bounds;
+                foreach (var surface in surfaces.Skip(1)) bounds.Encapsulate(surface.bounds);
+                var camera = cameraObject.AddComponent<Camera>();
+                camera.cullingMask = 1 << 31; camera.targetTexture = rt;
+                camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = new Color(.07f, .12f, .22f);
+                camera.fieldOfView = 32; camera.nearClipPlane = .01f; camera.farClipPlane = 100;
+                camera.transform.position = bounds.center + new Vector3(.7f, .3f, -1).normalized * bounds.extents.magnitude / Mathf.Tan(16 * Mathf.Deg2Rad) * 1.15f;
+                camera.transform.LookAt(bounds.center);
+                var light = lightObject.AddComponent<Light>(); light.type = LightType.Point; light.intensity = 3; light.range = 20; light.cullingMask = 1 << 31;
+                light.transform.position = bounds.center + new Vector3(-2, 3, -4);
+                camera.Render(); RenderTexture.active = rt;
+                picture.ReadPixels(new Rect(0, 0, 256, 256), 0, 0); picture.Apply();
+                var path = Root + "/Icons/" + item.Id + ".png";
+                File.WriteAllBytes(path, picture.EncodeToPNG());
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                importer.textureType = TextureImporterType.Sprite; importer.spriteImportMode = SpriteImportMode.Single;
+                importer.SaveAndReimport();
+                return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            }
+            finally
+            { RenderTexture.active = before; RenderTexture.ReleaseTemporary(rt); Object.DestroyImmediate(picture); Object.DestroyImmediate(cameraObject); Object.DestroyImmediate(lightObject); }
+        }
         /// <summary>Создаёт или обновляет определения товаров без изменения их кодов.</summary>
         /// <returns>Сохранённый каталог косметики.</returns>
         public static CosmeticCatalog BuildCatalog()
