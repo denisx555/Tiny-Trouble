@@ -13,7 +13,7 @@ namespace TinyTrouble.Tests
     /// <summary>
     /// Проверяет поворот настоящего героя через события мыши в сохранённом лобби.
     /// </summary>
-    public class CharacterRotationTests
+    public class CharacterRotationTests : CosmeticLobbyTestScope
     {
         /// <summary>
         /// Настройки громкости до теста, чтобы проверка ползунка не меняла выбор игрока.
@@ -189,7 +189,7 @@ namespace TinyTrouble.Tests
         /// <returns>Ожидание переключения вкладки и изменения ползунка.</returns>
         [UnityTest] public IEnumerator SliderDragDoesNotRotateHero()
         {
-            Object.FindObjectOfType<LobbyController>().SelectTab(2);
+            Object.FindObjectOfType<LobbyController>().SelectTab(3);
             yield return null;
             var slider = Object.FindObjectsOfType<Slider>().Single();
             var hero = GameObject.Find("LobbyCharacter").transform;

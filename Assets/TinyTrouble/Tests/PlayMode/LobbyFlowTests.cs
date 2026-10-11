@@ -15,7 +15,7 @@ namespace TinyTrouble.Tests
     /// <remarks>
     /// IEnumerator позволяет приостановить проверку через yield return и дождаться следующего кадра или загрузки.
     /// </remarks>
-    public class LobbyFlowTests
+    public class LobbyFlowTests : CosmeticLobbyTestScope
     {
         /// <summary>
         /// Были ли настройки игрока записаны до начала проверки.
@@ -123,7 +123,8 @@ namespace TinyTrouble.Tests
             string[] hex = { "#FFD84A", "#46C8F5", "#FF646B", "#AA79FF" };
             for (var i = 0; i < 4; i++)
             {
-                Find<Button>("Color" + i).onClick.Invoke(); yield return null;
+                Find<Button>("Color" + i).onClick.Invoke();
+                Find<CosmeticPanel>("CharacterPanel").GetComponentsInChildren<Button>().Single(b => b.name == "ActionButton").onClick.Invoke(); yield return null;
                 ColorUtility.TryParseHtmlString(hex[i], out var expected);
                 foreach (var hoodie in root.GetComponentsInChildren<Renderer>().Where(r => r.name.StartsWith("Hoodie")))
                     Assert.That(Vector4.Distance(hoodie.sharedMaterial.color, expected), Is.LessThan(.005f));
@@ -166,7 +167,7 @@ namespace TinyTrouble.Tests
             var controller = Object.FindObjectsOfType<MonoBehaviour>().Single(m => m.GetType().Name == "LobbyController");
             var advance = controller.GetType().GetMethod("AdvanceFocus");
             Assert.That(advance, Is.Not.Null, "Нет переключения фокуса клавишей Tab");
-            foreach (var name in new[] { "TabPlay", "TabCharacter", "TabSettings", "VolumeSlider" })
+            foreach (var name in new[] { "TabPlay", "TabCharacter", "TabShop", "TabSettings", "VolumeSlider" })
             {
                 advance.Invoke(controller, new object[] { false }); yield return null;
                 Assert.That(EventSystem.current.currentSelectedGameObject.name, Is.EqualTo(name));

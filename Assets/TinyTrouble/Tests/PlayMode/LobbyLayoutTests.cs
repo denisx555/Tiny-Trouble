@@ -14,7 +14,7 @@ using UnityEngine.UI;
 namespace TinyTrouble.Tests
 {
     /// <summary>Проверяет настоящее лобби после изменения размера окна игры.</summary>
-    public class LobbyLayoutTests
+    public class LobbyLayoutTests : CosmeticLobbyTestScope
     {
         /// <summary>Окно Game и его исходный размер, который вернём после проверки.</summary>
         EditorWindow gameView;

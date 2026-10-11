@@ -1,0 +1,104 @@
+using System.Collections;
+using System.Linq;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
+using UnityEngine.UI;
+
+namespace TinyTrouble.Tests
+{
+    /// <summary>Нажимает настоящие карточки, покупку и применение в сохранённом лобби.</summary>
+    public class CosmeticFlowTests : CosmeticLobbyTestScope
+    {
+        /// <summary>Открывает готовую сцену с изолированными настройками.</summary>
+        /// <returns>Ожидание загрузки.</returns>
+        [UnitySetUp] public IEnumerator OpenLobby() { yield return SceneManager.LoadSceneAsync("Lobby"); yield return null; }
+        /// <summary>Находит один из двух режимов общего интерфейса.</summary>
+        /// <param name="name">Имя сохранённой панели.</param>
+        /// <returns>Панель магазина или инвентаря.</returns>
+        static CosmeticPanel Panel(string name)
+        {
+            var result = Object.FindObjectsOfType<CosmeticPanel>(true).SingleOrDefault(p => p.name == name);
+            Assert.That(result, Is.Not.Null, name + " ещё не подключена"); return result;
+        }
+        /// <summary>Нажимает кнопку в указанной панели.</summary>
+        /// <param name="panel">Родитель кнопки.</param>
+        /// <param name="name">Имя кнопки.</param>
+        static void Click(CosmeticPanel panel, string name) => panel.GetComponentsInChildren<Button>(true).Single(b => b.name == name).onClick.Invoke();
+        /// <summary>Покупка сохраняет владение, а отдельное применение — внешний вид после перезагрузки.</summary>
+        /// <returns>Ожидание сцен и кадров.</returns>
+        [UnityTest] public IEnumerator PurchaseThenEquipThroughButtonsAndReload()
+        {
+            var controller = Object.FindObjectOfType<LobbyController>(); controller.SelectTab(2);
+            var shop = Panel("ShopPanel"); var card = shop.GetComponentsInChildren<CosmeticCard>().Single(c => c.ItemId == "stripes");
+            card.GetComponent<Button>().onClick.Invoke(); Click(shop, "ActionButton"); yield return null;
+            Assert.That(controller.Cosmetics.Snapshot.Balance, Is.EqualTo(600));
+            Assert.That(controller.Cosmetics.Snapshot.EquippedIds[0], Is.EqualTo("base-yellow"));
+            controller.SelectTab(1); var inventory = Panel("CharacterPanel");
+            inventory.GetComponentsInChildren<CosmeticCard>().Single(c => c.ItemId == "stripes").GetComponent<Button>().onClick.Invoke();
+            Click(inventory, "ActionButton"); yield return null;
+            yield return SceneManager.LoadSceneAsync("Lobby"); yield return null;
+            controller = Object.FindObjectOfType<LobbyController>();
+            Assert.That(controller.Cosmetics.Snapshot.Balance, Is.EqualTo(600)); Assert.That(controller.Cosmetics.Snapshot.OwnedIds, Does.Contain("stripes"));
+            Assert.That(controller.Cosmetics.Snapshot.EquippedIds[0], Is.EqualTo("stripes"));
+            Assert.That(GameObject.Find("LobbyCharacter").GetComponent<CharacterAppearance>().AppliedId, Is.EqualTo("stripes"));
+            Assert.That(EventSystem.current.currentSelectedGameObject.activeInHierarchy, Is.True);
+        }
+        /// <summary>Недостаток средств, повторная покупка и ошибка записи не показываются успехом.</summary>
+        [Test] public void InsufficientDuplicateAndFailedSaveShowStatus()
+        {
+            var controller = Object.FindObjectOfType<LobbyController>(); controller.SelectTab(2); var shop = Panel("ShopPanel");
+            shop.SelectItem("stripes"); Click(shop, "ActionButton");
+            Assert.That(shop.GetComponentsInChildren<Button>().Single(b => b.name == "ActionButton").interactable, Is.False);
+            shop.SelectCategory(CosmeticCategory.Pet); shop.SelectItem("pet-puppy"); Click(shop, "ActionButton");
+            shop.SelectCategory(CosmeticCategory.Weapon); shop.SelectItem("pistol-ice");
+            Assert.That(shop.GetComponentsInChildren<Button>().Single(b => b.name == "ActionButton").interactable, Is.False);
+            var catalog = UnityEditor.AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/TinyTrouble/Cosmetics/Catalog.asset");
+            var failed = new CosmeticService(catalog, new FailingCosmeticStore(), 0);
+            shop.Configure(catalog, failed, Object.FindObjectOfType<CosmeticPreview>(), CosmeticPanelMode.Shop); shop.SelectCategory(CosmeticCategory.Clothes); shop.SelectItem("stripes"); Click(shop, "ActionButton");
+            Assert.That(failed.Snapshot.OwnedIds, Is.Empty);
+            Assert.That(shop.GetComponentsInChildren<Text>().Single(t => t.name == "OperationStatus").text, Does.Contain("сохранить"));
+        }
+        /// <summary>Пустая категория поясняется, а скины разных оружий сохраняются независимо.</summary>
+        [Test] public void InventoryFiltersAndWeaponChoicesAreIndependent()
+        {
+            var controller = Object.FindObjectOfType<LobbyController>(); controller.SelectTab(1); var inventory = Panel("CharacterPanel");
+            inventory.SelectCategory(CosmeticCategory.Weapon);
+            Assert.That(inventory.GetComponentsInChildren<CosmeticCard>().Length, Is.Zero);
+            Assert.That(inventory.GetComponentsInChildren<Text>(true).Single(t => t.name == "EmptyMessage").gameObject.activeSelf, Is.True);
+            controller.Cosmetics.Buy("pistol-ice"); controller.Cosmetics.Buy("rifle-lime"); inventory.Refresh();
+            inventory.SelectItem("pistol-ice"); Click(inventory, "ActionButton"); inventory.SelectItem("rifle-lime"); Click(inventory, "ActionButton");
+            Assert.That(controller.Cosmetics.Snapshot.EquippedIds[1], Is.EqualTo("pistol-ice")); Assert.That(controller.Cosmetics.Snapshot.EquippedIds[2], Is.EqualTo("rifle-lime"));
+        }
+        /// <summary>Повреждённый профиль запрещает покупки, сохраняя доступ к обычным вкладкам.</summary>
+        /// <returns>Ожидание повторной загрузки.</returns>
+        [UnityTest] public IEnumerator CorruptProfileAllowsOtherTabsButBlocksWrites()
+        {
+            PlayerPrefs.SetString(CosmeticProfileStore.ProfileKey, "broken");
+            yield return SceneManager.LoadSceneAsync("Lobby"); yield return null;
+            var controller = Object.FindObjectOfType<LobbyController>(); controller.SelectTab(2); var shop = Panel("ShopPanel"); shop.SelectItem("stripes");
+            Assert.That(controller.Cosmetics.CanWrite, Is.False); Assert.That(shop.GetComponentsInChildren<Button>().Single(b => b.name == "ActionButton").interactable, Is.False);
+            controller.SelectTab(3); Assert.That(GameObject.Find("VolumeSlider"), Is.Not.Null);
+            controller.SelectTab(0); Assert.That(GameObject.Find("PlayButton").GetComponent<Button>().interactable, Is.True);
+        }
+        /// <summary>Временная очистка возвращает заранее записанные профиль, резерв, цвет и громкость.</summary>
+        [Test] public void TestsPreserveExistingProfile()
+        {
+            PlayerPrefs.SetString(CosmeticProfileStore.ProfileKey, "test-existing-profile"); PlayerPrefs.SetString(CosmeticProfileStore.RecoveryKey, "test-recovery");
+            PlayerPrefs.SetInt(CosmeticProfileStore.ColorKey, 3); PlayerPrefs.SetFloat("TinyTrouble.Volume", .37f);
+            using (new CosmeticPrefsScope()) { PlayerPrefs.SetString(CosmeticProfileStore.ProfileKey, "temporary"); }
+            Assert.That(PlayerPrefs.GetString(CosmeticProfileStore.ProfileKey), Is.EqualTo("test-existing-profile")); Assert.That(PlayerPrefs.GetString(CosmeticProfileStore.RecoveryKey), Is.EqualTo("test-recovery"));
+            Assert.That(PlayerPrefs.GetInt(CosmeticProfileStore.ColorKey), Is.EqualTo(3)); Assert.That(PlayerPrefs.GetFloat("TinyTrouble.Volume"), Is.EqualTo(.37f));
+        }
+    }
+    /// <summary>Имитирует недоступный диск только в тесте, не меняя настоящие настройки.</summary>
+    sealed class FailingCosmeticStore : ICosmeticProfileStore
+    {
+        /// <inheritdoc/>
+        public CosmeticLoadResult Load(CosmeticCatalog catalog, int legacyColor) { var profile = new CosmeticProfile { Balance = 1000 }; profile.EquippedIds[0] = "base-yellow"; return new CosmeticLoadResult { Profile = profile, CanWrite = true }; }
+        /// <inheritdoc/>
+        public void Save(CosmeticProfile profile, int? basicColorIndex = null) { throw new System.IO.IOException("Тестовая ошибка диска"); }
+    }
+}

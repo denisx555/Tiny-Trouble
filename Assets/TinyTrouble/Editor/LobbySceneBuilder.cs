@@ -433,6 +433,7 @@ namespace TinyTrouble.Editor
             for(int i=0;i<3;i++)panels[i].SetActive(i==0);
             // Отдельный компонент переставляет меню и камеру при изменении размера окна.
             canvasGo.AddComponent<LobbyLayout>().Configure(Camera.main, hero.transform);
+            TinyTrouble.EditorTools.CosmeticUIBuilder.Attach(canvasGo, hero, TinyTrouble.EditorTools.CosmeticAssetBuilder.BuildCatalog());
             return canvasGo;
         }
     }

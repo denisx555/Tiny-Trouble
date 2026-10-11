@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 namespace TinyTrouble.Tests
 {
     /// <summary>Открывает настоящий герой и даёт проверкам доступ к его частям.</summary>
-    public abstract class CharacterTestRig
+    public abstract class CharacterTestRig : CosmeticLobbyTestScope
     {
         /// <summary>Корень героя из сохранённой сцены.</summary>
         protected GameObject hero;

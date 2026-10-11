@@ -105,7 +105,7 @@ namespace TinyTrouble.Tests
             Advance(life, 2);
             var controller = UnityEngine.Object.FindObjectOfType<LobbyController>();
             controller.SetHoodieColor(LobbyPreferences.LoadHoodieColor());
-            controller.SetVolume(.37f); controller.SelectTab(1); controller.SelectTab(2);
+            controller.SetVolume(.37f); controller.SelectTab(1); controller.SelectTab(3);
             Advance(life, .5f); Assert.That(Gesture(life), Is.EqualTo("None"));
             var chosen = (LobbyPreferences.LoadHoodieColor() + 1) % 4;
             controller.SetHoodieColor(chosen);

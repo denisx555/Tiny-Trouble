@@ -10,7 +10,8 @@ namespace TinyTrouble.EditorTools
         /// <returns>Цвет основы рисунка.</returns>
         public static Color Tint(CosmeticItem item)
         {
-            if (item.BasicColorIndex >= 0) return new[] { new Color(1, .78f, .12f), new Color(.12f, .65f, 1), new Color(1, .24f, .32f), new Color(.62f, .32f, 1) }[item.BasicColorIndex];
+            if (item.BasicColorIndex >= 0)
+            { ColorUtility.TryParseHtmlString(new[] { "#FFD84A", "#46C8F5", "#FF646B", "#AA79FF" }[item.BasicColorIndex], out var color); return color; }
             if (item.Id.Contains("space") || item.Id.Contains("stars")) return new Color(.16f, .13f, .42f);
             if (item.Id.Contains("neon")) return new Color(.09f, .12f, .2f);
             if (item.Id.Contains("ice") || item.Id.Contains("clouds") || item.Id.Contains("wave")) return new Color(.16f, .7f, .94f);

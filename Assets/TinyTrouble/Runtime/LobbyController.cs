@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -15,12 +16,14 @@ namespace TinyTrouble
     /// </remarks>
     public sealed class LobbyController : MonoBehaviour
     {
+        /// <summary>Общие операции магазина и инвентаря этого лобби.</summary>
+        public CosmeticService Cosmetics { get; private set; }
         /// <summary>
-        /// Содержимое трёх вкладок. SerializeField сохраняет ссылки на объекты и показывает их в Inspector.
+        /// Содержимое четырёх вкладок. SerializeField сохраняет ссылки на объекты и показывает их в Inspector.
         /// </summary>
         [SerializeField] GameObject[] panels;
         /// <summary>
-        /// Кнопки вкладок: 0 — «Играть», 1 — «Персонаж», 2 — «Настройки».
+        /// Кнопки вкладок: 0 — «Играть», 1 — «Персонаж», 2 — «Магазин», 3 — «Настройки».
         /// </summary>
         [SerializeField] Button[] tabs;
         /// <summary>
@@ -55,14 +58,18 @@ namespace TinyTrouble
         /// Название сцены для перехода; сейчас в SampleScene только камера и свет.
         /// </summary>
         [SerializeField] string gameSceneName = "SampleScene";
-        /// <summary>
-        /// Цвета толстовки: по две цифры кода #RRGGBB для красного, зелёного и синего.
-        /// </summary>
-        static readonly string[] HoodieHex = { "#FFD84A", "#46C8F5", "#FF646B", "#AA79FF" };
-        /// <summary>
-        /// Материал задаёт внешний вид поверхности: храним свои копии и исходные материалы героя.
-        /// </summary>
-        Material[] ownedMaterials, originalMaterials;
+        /// <summary>Сохранённый каталог всех косметических вещей.</summary>
+        [SerializeField] CosmeticCatalog catalog;
+        /// <summary>Единственный владелец личных материалов одежды.</summary>
+        [SerializeField] CharacterAppearance appearance;
+        /// <summary>Временная примерка одежды, предметов и питомцев.</summary>
+        [SerializeField] CosmeticPreview preview;
+        /// <summary>Два режима общего интерфейса вещей.</summary>
+        [SerializeField] CosmeticPanel shopPanel, inventoryPanel;
+        /// <summary>Баланс собственной игровой валюты в шапке.</summary>
+        [SerializeField] Text balanceText;
+        /// <summary>Последняя закреплённая одежда для одной реакции при настоящем изменении.</summary>
+        string currentClothes;
         /// <summary>
         /// Показывает, что уровень уже загружается и повторное нажатие запрещено.
         /// </summary>
@@ -103,27 +110,38 @@ namespace TinyTrouble
         /// </summary>
         void Awake()
         {
-            ownedMaterials = new Material[hoodieRenderers.Length];
-            originalMaterials = new Material[hoodieRenderers.Length];
-            // Копии материалов нужны, чтобы смена толстовки не перекрасила других персонажей.
-            for (var i = 0; i < hoodieRenderers.Length; i++)
-            {
-                originalMaterials[i] = hoodieRenderers[i].sharedMaterial;
-                ownedMaterials[i] = new Material(originalMaterials[i]);
-                hoodieRenderers[i].sharedMaterial = ownedMaterials[i];
-            }
-            // Применяем настройки без повторной записи на диск и открываем вкладку «Играть».
-            ApplyColor(LobbyPreferences.LoadHoodieColor());
-            ApplyVolume(LobbyPreferences.LoadVolume());
-            SelectTab(0);
+            appearance.Configure(hoodieRenderers);
+            Cosmetics = new CosmeticService(catalog, new CosmeticProfileStore(new PlayerPrefsCosmeticPreferences()), LobbyPreferences.LoadHoodieColor());
+            Cosmetics.Changed += OnCosmeticsChanged;
+            shopPanel.Configure(catalog, Cosmetics, preview, CosmeticPanelMode.Shop);
+            inventoryPanel.Configure(catalog, Cosmetics, preview, CosmeticPanelMode.Inventory);
+            var hero = characterLife.transform;
+            preview.Configure(catalog, appearance, hero.GetComponent<CharacterDance>(), hero,
+                GetComponentsInChildren<Camera>(true).FirstOrDefault(), GetComponentsInChildren<RawImage>(true).FirstOrDefault(),
+                GameObject.Find("CosmeticPreviewRoot").transform, GameObject.Find("PetAnchor").transform);
+            OnCosmeticsChanged();
+            ApplyVolume(LobbyPreferences.LoadVolume()); SelectTab(0);
+        }
+        /// <summary>После успешной записи обновляет обе панели и закреплённый вид.</summary>
+        void OnCosmeticsChanged()
+        {
+            var profile = Cosmetics.Snapshot; balanceText.text = "Ш  " + profile.Balance + "  ШАЛКОИНЫ";
+            var changed = currentClothes != null && currentClothes != profile.EquippedIds[0];
+            currentClothes = profile.EquippedIds[0];
+            if (catalog.TryGet(currentClothes, out var item)) { appearance.Apply(item); currentColor = item.BasicColorIndex; }
+            preview.Restore(profile);
+            shopPanel.Refresh(); inventoryPanel.Refresh();
+            for (var i = 0; i < colorButtons.Length; i++) colorButtons[i].transform.Find("SelectionFrame").gameObject.SetActive(i == currentColor);
+            if (changed && characterLife) characterLife.NotifyColorChanged();
         }
         /// <summary>
         /// Показывает выбранную панель и переводит выделение на видимый элемент.
         /// </summary>
-        /// <param name="index">Номер вкладки: 0 «Играть», 1 «Персонаж», 2 «Настройки».</param>
+        /// <param name="index">Номер вкладки: 0 «Играть», 1 «Персонаж», 2 «Магазин», 3 «Настройки».</param>
         public void SelectTab(int index)
         {
             if (IsLoading || index < 0 || index >= panels.Length) return;
+            preview.Close(Cosmetics.Snapshot);
             // Показываем одну панель и меняем цвет кнопки активной вкладки.
             for (var i = 0; i < panels.Length; i++)
             {
@@ -132,7 +150,7 @@ namespace TinyTrouble
                 tabs[i].GetComponentInChildren<Text>().color = i == index ? new Color(.04f, .09f, .18f) : Color.white;
             }
             // Стрелка вниз с вкладок ведёт к нужному элементу открытой панели.
-            Selectable first = index == 0 ? (Selectable)playButton : index == 1 ? colorButtons[LobbyPreferences.LoadHoodieColor()] : volumeSlider;
+            Selectable first = index == 0 ? (Selectable)playButton : index == 1 ? inventoryPanel.FirstSelectable : index == 2 ? shopPanel.FirstSelectable : volumeSlider;
             for (var i = 0; i < tabs.Length; i++)
             {
                 var nav = tabs[i].navigation;
@@ -154,22 +172,8 @@ namespace TinyTrouble
         /// <param name="index">Номер образца цвета от 0 до 3.</param>
         public void SetHoodieColor(int index)
         {
-            var normalized = LobbyPreferences.SaveHoodieColor(index);
-            var changed = normalized != currentColor;
-            ApplyColor(normalized);
-            if (changed && characterLife) characterLife.NotifyColorChanged();
-        }
-        /// <summary>
-        /// Окрашивает личные материалы героя и отмечает выбранный образец.
-        /// </summary>
-        /// <param name="index">Проверенный номер цвета от 0 до 3.</param>
-        void ApplyColor(int index)
-        {
-            currentColor = index;
-            ColorUtility.TryParseHtmlString(HoodieHex[index], out var color);
-            foreach (var material in ownedMaterials) material.color = color;
-            for (var i = 0; i < colorButtons.Length; i++)
-                colorButtons[i].transform.Find("SelectionFrame").gameObject.SetActive(i == index);
+            if (IsLoading || Cosmetics == null) return;
+            Cosmetics.Equip(new[] { "base-yellow", "base-blue", "base-red", "base-purple" }[Mathf.Clamp(index, 0, 3)]);
         }
         /// <summary>
         /// Сохраняет громкость от ползунка и сразу меняет звук.
@@ -208,6 +212,7 @@ namespace TinyTrouble
             }
             // Блокируем повторное нажатие до начала загрузки.
             IsLoading = true;
+            preview.Close(Cosmetics.Snapshot);
             playButton.interactable = false;
             foreach (var tab in tabs) tab.interactable = false;
             statusText.text = "ЗАГРУЗКА…";
@@ -221,17 +226,7 @@ namespace TinyTrouble
                 statusText.text = "Не удалось открыть уровень. Попробуйте ещё раз";
             }
         }
-        /// <summary>
-        /// При удалении компонента возвращает исходные материалы и освобождает наши копии.
-        /// </summary>
-        void OnDestroy()
-        {
-            if (ownedMaterials == null) return;
-            for (var i = 0; i < ownedMaterials.Length; i++)
-            {
-                if (hoodieRenderers[i]) hoodieRenderers[i].sharedMaterial = originalMaterials[i];
-                if (ownedMaterials[i]) Destroy(ownedMaterials[i]);
-            }
-        }
+        /// <summary>Отписывается от обновлений профиля; личные материалы освобождает CharacterAppearance.</summary>
+        void OnDestroy() { if (Cosmetics != null) Cosmetics.Changed -= OnCosmeticsChanged; }
     }
 }

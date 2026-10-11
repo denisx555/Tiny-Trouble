@@ -141,13 +141,15 @@ namespace TinyTrouble
             TextBox("BrandCaption", compact ? 24 : 48, compact ? 76 : 35, 350, 22, 12);
             Show("LobbyTag", !compact);
             Place("LobbyTag", width - 198, 42, 150, 38);
-            var tabWidth = compact ? (width - 64) / 3 : 204;
-            var start = compact ? 24 : width / 2 - 322;
+            var hasShop = elements.ContainsKey("TabShop"); var count = hasShop ? 4 : 3;
+            if (hasShop) TextBox("BalanceBadge", width - (compact ? 314 : 338), compact ? 100 : 42, 290, 36, compact ? 16 : 17, TextAnchor.MiddleRight);
+            var tabWidth = compact ? (width - 48 - 8 * (count - 1)) / count : hasShop ? Mathf.Min(180, (width - 800) / 4) : 204;
+            var start = compact ? 24 : hasShop ? 420 : width / 2 - 322;
             var index = 0;
-            foreach (var name in new[] { "TabPlay", "TabCharacter", "TabSettings" })
+            foreach (var name in hasShop ? new[] { "TabPlay", "TabCharacter", "TabShop", "TabSettings" } : new[] { "TabPlay", "TabCharacter", "TabSettings" })
             {
-                Place(name, start + index * (tabWidth + (compact ? 8 : 16)), compact ? 16 : 34, tabWidth, compact ? 48 : 54);
-                elements[name].GetComponentInChildren<Text>().fontSize = compact ? 18 : 20;
+                Place(name, start + index * (tabWidth + (compact ? 8 : 12)), compact ? 16 : 34, tabWidth, compact ? 48 : 54);
+                elements[name].GetComponentInChildren<Text>().fontSize = compact ? 18 : 18;
                 index++;
             }
         }
@@ -166,16 +168,18 @@ namespace TinyTrouble
             Place("PlayButton", 24, compact ? 38 : 42, contentWidth, compact ? 74 : 94);
             elements["PlayButton"].GetComponentInChildren<Text>().fontSize = compact ? 32 : 36;
             TextBox("PlayHint", 24, 8, contentWidth, 22, 11, TextAnchor.MiddleCenter);
-            foreach (var name in new[] { "CharacterTitle", "SettingsTitle" })
-                TextBox(name, 24, height - 72, contentWidth, 48, compact ? 28 : 32);
-            TextBox("CharacterCopy", 24, height - 115, contentWidth, 32, 18);
-            for (var i = 0; i < 4; i++)
+            TextBox("SettingsTitle", 24, height - 72, contentWidth, 48, compact ? 28 : 32);
+            if (!elements.ContainsKey("ShopPanel"))
             {
-                Place("Color" + i, width / 2 - 167 + i * 88, compact ? 54 : 122, 70, compact ? 56 : 74);
-                // Полоска выбора находится под кнопкой, но выше поясняющего текста.
-                Place(elements["Color" + i].Find("SelectionFrame") as RectTransform, 0, -10, 70, 4);
+                TextBox("CharacterTitle", 24, height - 72, contentWidth, 48, compact ? 28 : 32);
+                TextBox("CharacterCopy", 24, height - 115, contentWidth, 32, 18);
+                for (var i = 0; i < 4; i++)
+                {
+                    Place("Color" + i, width / 2 - 167 + i * 88, compact ? 54 : 122, 70, compact ? 56 : 74);
+                    Place(elements["Color" + i].Find("SelectionFrame") as RectTransform, 0, -10, 70, 4);
+                }
+                TextBox("StyleHint", 24, 10, contentWidth, 30, 14, TextAnchor.MiddleCenter);
             }
-            TextBox("StyleHint", 24, 10, contentWidth, 30, 14, TextAnchor.MiddleCenter);
             TextBox("VolumeLabel", 24, height - 119, width - 150, 30, 15);
             TextBox("VolumePercent", width - 109, height - 119, 85, 30, 20, TextAnchor.MiddleRight);
             Place("VolumeSlider", 24, compact ? 65 : 106, contentWidth, compact ? 40 : 50);

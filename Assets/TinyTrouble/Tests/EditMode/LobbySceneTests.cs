@@ -36,7 +36,10 @@ namespace TinyTrouble.Tests
                 var scene = EditorSceneManager.OpenScene("Assets/Scenes/Lobby.unity");
                 var roots = scene.GetRootGameObjects();
                 Assert.That(roots.SelectMany(r => r.GetComponentsInChildren<EventSystem>(true)).Count(), Is.EqualTo(1));
-                Assert.That(roots.SelectMany(r => r.GetComponentsInChildren<Camera>(true)).Count(), Is.EqualTo(1));
+                var cameras = roots.SelectMany(r => r.GetComponentsInChildren<Camera>(true)).ToArray();
+                Assert.That(cameras.Count(c => c.CompareTag("MainCamera")), Is.EqualTo(1));
+                var previewCamera = cameras.Single(c => c.name == "CosmeticPreviewCamera");
+                Assert.That(previewCamera.cullingMask, Is.EqualTo(1 << CosmeticPreview.PreviewLayer)); Assert.That(previewCamera.targetTexture, Is.Not.Null);
                 var controller = roots.SelectMany(r => r.GetComponentsInChildren<MonoBehaviour>(true))
                     .Single(m => m != null && m.GetType().Name == "LobbyController");
                 // SerializedObject читает поля компонента так, как они сохранены в Inspector.
