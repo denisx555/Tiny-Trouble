@@ -123,7 +123,7 @@ get_test_job(job_id=<ID>, wait_timeout=30, include_failed_tests=true)
 - `CosmeticCatalog : ScriptableObject`: `IReadOnlyList<CosmeticItem> Items`, `bool TryGet(string id, out CosmeticItem item)`, `void Configure(CosmeticItem[] items)`, `string[] Validate(bool requireVisuals)`.
 - `CosmeticAssetBuilder.BuildCatalog(): CosmeticCatalog` — записать/обновить определения в `Assets/TinyTrouble/Cosmetics/Catalog.asset`, сохранить существующие GUID.
 
-- [ ] **1. Написать тесты каталога с минимальными контрактами.**
+- [x] **1. Написать тесты каталога с минимальными контрактами.**
   `CatalogHasStableIdsAndNewPrices`: 27 платных, 4 бесплатных, 31 уникальный ID,
   ровно 8 категорий и 10 мест; проверка каждой цены из Global Constraints.
   `RejectsDuplicateIdNegativePriceAndWrongSlot`: массив ошибок непустой для
@@ -138,9 +138,9 @@ get_test_job(job_id=<ID>, wait_timeout=30, include_failed_tests=true)
   Assert.That(stripes.Price, Is.EqualTo(400));
   Assert.That(catalog.Validate(false), Is.Empty);
   ```
-- [ ] **2. Запустить `CosmeticCatalogTests` в EditMode.** Ожидается неверное
+- [x] **2. Запустить `CosmeticCatalogTests` в EditMode.** Ожидается неверное
   содержимое/проверка каталога, сохранить красный результат.
-- [ ] **3. Реализовать поиск, проверки и BuildCatalog.** Перенести все ID,
+- [x] **3. Реализовать поиск, проверки и BuildCatalog.** Перенести все ID,
   названия и описания из согласованного HTML, без выполнения его скриптов.
   Порядок ID: `stripes`, `space`, `neon`; `pistol-pop`, `pistol-ice`,
   `rifle-space`, `rifle-lime`, `shotgun-fire`, `shotgun-wave`; `robot`, `spring`,
@@ -150,9 +150,9 @@ get_test_job(job_id=<ID>, wait_timeout=30, include_failed_tests=true)
   `pickaxe-space`. Бесплатные `base-yellow`, `base-blue`, `base-red`,
   `base-purple` с BasicColorIndex 0..3 и ценой 0. Платные цены задавать сразу
   новыми числами, не прибавлять 100 при каждой сборке каталога.
-- [ ] **4. Повторить `CosmeticCatalogTests`.** Все проверки проходят;
+- [x] **4. Повторить `CosmeticCatalogTests`.** Все проверки проходят;
   повторный BuildCatalog не удваивает цены и не создаёт второй каталог.
-- [ ] **5. Коммит:** `Описать товары и цены магазина`.
+- [x] **5. Коммит:** `Описать товары и цены магазина`.
 
 ### Task 2: Профиль, миграция и безопасное хранилище
 
