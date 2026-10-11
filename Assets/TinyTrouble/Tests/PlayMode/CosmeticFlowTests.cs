@@ -46,6 +46,24 @@ namespace TinyTrouble.Tests
             Assert.That(GameObject.Find("LobbyCharacter").GetComponent<CharacterAppearance>().AppliedId, Is.EqualTo("stripes"));
             Assert.That(EventSystem.current.currentSelectedGameObject.activeInHierarchy, Is.True);
         }
+        /// <summary>Открытие магазина и покупка сохраняют примерку выделенной одежды без автоматического надевания.</summary>
+        [Test] public void OpeningShopPreviewsHighlightedClothesWithoutEquipping()
+        {
+            var controller = Object.FindObjectOfType<LobbyController>(); controller.SelectTab(2);
+            var catalog = UnityEditor.AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/TinyTrouble/Cosmetics/Catalog.asset");
+            catalog.TryGet("stripes", out var stripes);
+            var appearance = GameObject.Find("LobbyCharacter").GetComponent<CharacterAppearance>();
+            var hoodie = GameObject.Find("LobbyCharacter").GetComponentsInChildren<Renderer>().Single(r => r.name == "HoodieBody");
+            Assert.That(hoodie.sharedMaterial.mainTexture, Is.SameAs(stripes.Material.mainTexture));
+            Assert.That(controller.Cosmetics.Snapshot.Balance, Is.EqualTo(1000));
+            Assert.That(appearance.AppliedId, Is.EqualTo("base-yellow"));
+            Click(Panel("ShopPanel"), "ActionButton");
+            Assert.That(hoodie.sharedMaterial.mainTexture, Is.SameAs(stripes.Material.mainTexture));
+            Assert.That(controller.Cosmetics.Snapshot.Balance, Is.EqualTo(600));
+            Assert.That(controller.Cosmetics.Snapshot.EquippedIds[0], Is.EqualTo("base-yellow"));
+            controller.SelectTab(0);
+            Assert.That(hoodie.sharedMaterial.mainTexture, Is.Null);
+        }
         /// <summary>Недостаток средств, повторная покупка и ошибка записи не показываются успехом.</summary>
         [Test] public void InsufficientDuplicateAndFailedSaveShowStatus()
         {

@@ -42,8 +42,12 @@ namespace TinyTrouble.EditorTools
                 panels[i] = canvas.transform.Find(panelNames[i]).gameObject;
             }
             for (var i = 0; i < 4; i++) tabs[i].navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnLeft = tabs[(i + 3) % 4], selectOnRight = tabs[(i + 1) % 4] };
-            var balance = Label("BalanceBadge", header, "Ш  1000  ШАЛКОИНЫ", 16); balance.alignment = TextAnchor.MiddleRight;
+            var balance = Label("BalanceBadge", header, "1000  ШАЛКОИНЫ", 16); balance.alignment = TextAnchor.MiddleRight;
             Place(balance.rectTransform, 1530, 42, 330, 36);
+            var coin = Rect("CurrencyCoin", header); var coinImage = Background(coin, new Color(1f, .78f, .16f));
+            coinImage.sprite = CurrencySprite(); Place(coin, 1490, 44, 32, 32);
+            var symbol = Label("CurrencySymbol", coin, "Ш", 21); symbol.color = new Color(.22f, .12f, .01f); symbol.alignment = TextAnchor.MiddleCenter;
+            Stretch(symbol.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             var stageObject = GameObject.Find("CosmeticPreviewRoot"); if (!stageObject) stageObject = new GameObject("CosmeticPreviewRoot"); stageObject.transform.position = new Vector3(1000, 1000, 1000);
             var pet = GameObject.Find("PetAnchor"); if (!pet) pet = new GameObject("PetAnchor"); pet.transform.position = hero.transform.position + new Vector3(1, 0, -.05f);
             var cameraObject = Rect("CosmeticPreviewCamera", canvas.transform).gameObject;
@@ -65,6 +69,24 @@ namespace TinyTrouble.EditorTools
             Set(data, "shopPanel", shop); Set(data, "inventoryPanel", inventory); Set(data, "balanceText", balance);
             Array(data, "colorButtons", inventory.GetComponentsInChildren<Button>(true).Where(b => b.name.StartsWith("Color")).OrderBy(b => b.name).ToArray()); data.ApplyModifiedPropertiesWithoutUndo();
             foreach (var panel in panels) panel.SetActive(panel.name == "PlayPanel"); AssetDatabase.SaveAssets();
+        }
+        /// <summary>Сохраняет собственный круглый значок монеты с прозрачными углами.</summary>
+        /// <returns>Изображение золотой монеты для шапки лобби.</returns>
+        static Sprite CurrencySprite()
+        {
+            var path = CosmeticAssetBuilder.Root + "/Icons/currency.png";
+            if (!System.IO.File.Exists(path))
+            {
+                var texture = new Texture2D(64, 64);
+                for (var y = 0; y < 64; y++) for (var x = 0; x < 64; x++)
+                {
+                    var distance = Vector2.Distance(new Vector2(x, y), new Vector2(31.5f, 31.5f));
+                    texture.SetPixel(x, y, distance > 31 ? Color.clear : distance > 27 ? new Color(.8f, .57f, .08f) : Color.white);
+                }
+                texture.Apply(); System.IO.File.WriteAllBytes(path, texture.EncodeToPNG()); Object.DestroyImmediate(texture); AssetDatabase.ImportAsset(path);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(path); importer.textureType = TextureImporterType.Sprite; importer.alphaIsTransparency = true; importer.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
         /// <summary>Готовит панель с категориями, прокручиваемым списком и закреплённым действием.</summary>
         /// <param name="root">Корень готовой панели.</param>
@@ -103,6 +125,7 @@ namespace TinyTrouble.EditorTools
             var status = Label("OperationStatus", rt, "", 14); Place(status.rectTransform, 24, 12, 772, 34); status.color = new Color(.4f, .86f, .96f);
             var data = new SerializedObject(panel); Set(data, "cardsRoot", content); Set(data, "cardPrefab", prefab); Array(data, "categoryButtons", categories); Set(data, "actionButton", action); Set(data, "danceButton", dance);
             Set(data, "detailTitle", detail); Set(data, "description", description); Set(data, "operationStatus", status); Set(data, "emptyMessage", empty); data.ApplyModifiedPropertiesWithoutUndo();
+            var layout = root.GetComponent<CosmeticPanelLayout>(); if (!layout) layout = root.AddComponent<CosmeticPanelLayout>(); layout.Configure(categoryRoot, viewport, content, description.rectTransform, (RectTransform)action.transform);
             return panel;
         }
         /// <summary>Сохраняет общий шаблон карточки с русским шрифтом и обработчиком кнопки.</summary>

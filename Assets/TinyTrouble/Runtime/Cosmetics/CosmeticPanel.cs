@@ -84,6 +84,8 @@ namespace TinyTrouble
             if (service == null || !catalog.TryGet(id, out var item) || item.Category != category || !cards.TryGetValue(id, out var card) || !card.gameObject.activeSelf) return;
             selected = item; operationStatus.text = ""; Refresh(); preview.Show(item);
         }
+        /// <summary>Показывает выделенную вещь при входе на вкладку, не меняя надетое.</summary>
+        public void ShowSelection() { if (selected != null) preview.Show(selected); }
         /// <summary>Обновляет карточки из профиля, сохраняя существующие объекты и выделение.</summary>
         public void Refresh()
         {
@@ -95,7 +97,8 @@ namespace TinyTrouble
                 card.gameObject.SetActive(visible); card.Configure(item, service, SelectItem);
             }
             if (selected == null || !cards.TryGetValue(selected.Id, out var selectedCard) || !selectedCard.gameObject.activeSelf)
-                selected = catalog.Items.FirstOrDefault(i => cards.TryGetValue(i.Id, out var card) && card.gameObject.activeSelf);
+                selected = catalog.Items.FirstOrDefault(i => mode == CosmeticPanelMode.Inventory && service.Snapshot.EquippedIds[(int)i.Slot] == i.Id && cards.TryGetValue(i.Id, out var card) && card.gameObject.activeSelf)
+                    ?? catalog.Items.FirstOrDefault(i => cards.TryGetValue(i.Id, out var card) && card.gameObject.activeSelf);
             foreach (var pair in cards) pair.Value.SetHighlighted(selected != null && pair.Key == selected.Id);
             for (var i = 0; i < categoryButtons.Length; i++) categoryButtons[i].image.color = i == (int)category ? new Color(.12f, .48f, .63f) : new Color(.12f, .18f, .31f);
             emptyMessage.gameObject.SetActive(selected == null); actionButton.gameObject.SetActive(selected != null);
@@ -111,7 +114,39 @@ namespace TinyTrouble
             }
             if (!service.CanWrite) operationStatus.text = "Сохранение недоступно. Покупки и выбор отключены.";
             else if (selected != null && mode == CosmeticPanelMode.Shop && !service.Owns(selected.Id) && service.Snapshot.Balance < selected.Price) operationStatus.text = "Не хватает Шалкоинов";
-            if (isActiveAndEnabled && EventSystem.current && (EventSystem.current.currentSelectedGameObject == null || !EventSystem.current.currentSelectedGameObject.activeInHierarchy)) EventSystem.current.SetSelectedGameObject(FirstSelectable.gameObject);
+            RebuildNavigation();
+            if (isActiveAndEnabled && EventSystem.current)
+            {
+                var focus = EventSystem.current.currentSelectedGameObject; var control = focus ? focus.GetComponent<Selectable>() : null;
+                if (!control || !focus.activeInHierarchy || !control.IsInteractable()) EventSystem.current.SetSelectedGameObject(FirstSelectable.gameObject);
+                else if (focus.transform.IsChildOf(cardsRoot)) EnsureSelectionVisible(control);
+            }
+        }
+        /// <summary>Пропускает скрытые карточки и связывает стрелками текущую сетку и доступные действия.</summary>
+        public void RebuildNavigation()
+        {
+            if (!cardsRoot || categoryButtons == null) return;
+            var visible = cardsRoot.GetComponentsInChildren<CosmeticCard>().Select(c => c.GetComponent<Button>()).ToArray();
+            var columns = cardsRoot.GetComponent<GridLayoutGroup>().constraintCount;
+            var header = transform.parent.Find("Header"); var tab = header ? header.Find(mode == CosmeticPanelMode.Shop ? "TabShop" : "TabCharacter").GetComponent<Button>() : null;
+            var first = visible.Length > 0 ? visible[0] : actionButton.isActiveAndEnabled && actionButton.IsInteractable() ? actionButton : categoryButtons[0];
+            for (var i = 0; i < categoryButtons.Length; i++)
+                categoryButtons[i].navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnLeft = categoryButtons[(i + 7) % 8], selectOnRight = categoryButtons[(i + 1) % 8], selectOnUp = i >= 4 ? categoryButtons[i - 4] : tab, selectOnDown = i < 4 ? categoryButtons[i + 4] : first };
+            for (var i = 0; i < visible.Length; i++)
+                visible[i].navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnLeft = i > 0 ? visible[i - 1] : categoryButtons[4], selectOnRight = i + 1 < visible.Length ? visible[i + 1] : categoryButtons[7], selectOnUp = i >= columns ? visible[i - columns] : categoryButtons[4 + i % 4], selectOnDown = i + columns < visible.Length ? visible[i + columns] : actionButton.isActiveAndEnabled && actionButton.IsInteractable() ? actionButton : categoryButtons[0] };
+            var last = visible.Length > 0 ? visible[visible.Length - 1] : categoryButtons[4];
+            actionButton.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnUp = last, selectOnDown = categoryButtons[0], selectOnRight = danceButton.isActiveAndEnabled && danceButton.IsInteractable() ? danceButton : categoryButtons[0] };
+            danceButton.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnUp = last, selectOnDown = categoryButtons[0], selectOnLeft = actionButton.IsInteractable() ? actionButton : last };
+        }
+        /// <summary>Прокручивает выбранную карточку целиком в видимую область списка.</summary>
+        /// <param name="selection">Выделенный клавиатурой элемент.</param>
+        public void EnsureSelectionVisible(Selectable selection)
+        {
+            if (!selection || !selection.transform.IsChildOf(cardsRoot)) return;
+            var scroll = cardsRoot.GetComponentInParent<ScrollRect>(); Canvas.ForceUpdateCanvases();
+            var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(scroll.viewport, selection.transform); var area = scroll.viewport.rect;
+            if (bounds.min.y < area.yMin) scroll.content.anchoredPosition += Vector2.up * (area.yMin - bounds.min.y);
+            else if (bounds.max.y > area.yMax) scroll.content.anchoredPosition -= Vector2.up * (bounds.max.y - area.yMax);
         }
         /// <summary>Покупает или применяет только после повторной проверки сервиса.</summary>
         public void PerformAction()
@@ -123,7 +158,7 @@ namespace TinyTrouble
             if (result == CosmeticOperationResult.Success)
             {
                 operationStatus.text = mode == CosmeticPanelMode.Shop ? "Куплено! Вещь появилась в инвентаре." : "Выбор сохранён";
-                if (mode == CosmeticPanelMode.Inventory && item.Category == CosmeticCategory.Dance) preview.Show(item);
+                if (mode == CosmeticPanelMode.Shop || item.Category == CosmeticCategory.Dance) preview.Show(item);
             }
             else if (result == CosmeticOperationResult.SaveFailed) operationStatus.text = "Не удалось сохранить. Изменение не выполнено.";
             else if (result == CosmeticOperationResult.ReadOnly) operationStatus.text = "Сохранение недоступно. Изменение не выполнено.";

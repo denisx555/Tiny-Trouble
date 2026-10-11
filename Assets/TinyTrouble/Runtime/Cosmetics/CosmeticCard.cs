@@ -40,13 +40,6 @@ namespace TinyTrouble
         /// <summary>Прокручивает список так, чтобы выбранная клавиатурой карточка была видна.</summary>
         /// <param name="eventData">Событие выбора элемента интерфейса.</param>
         public void OnSelect(BaseEventData eventData)
-        {
-            var scroll = GetComponentInParent<ScrollRect>(); if (!scroll) return;
-            Canvas.ForceUpdateCanvases();
-            var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(scroll.viewport, transform);
-            var area = scroll.viewport.rect;
-            if (bounds.min.y < area.yMin) scroll.content.anchoredPosition += Vector2.up * (area.yMin - bounds.min.y);
-            else if (bounds.max.y > area.yMax) scroll.content.anchoredPosition -= Vector2.up * (bounds.max.y - area.yMax);
-        }
+        { var panel = GetComponentInParent<CosmeticPanel>(); if (panel) panel.EnsureSelectionVisible(GetComponent<Button>()); }
     }
 }

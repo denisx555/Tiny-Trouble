@@ -125,7 +125,7 @@ namespace TinyTrouble
         /// <summary>После успешной записи обновляет обе панели и закреплённый вид.</summary>
         void OnCosmeticsChanged()
         {
-            var profile = Cosmetics.Snapshot; balanceText.text = "Ш  " + profile.Balance + "  ШАЛКОИНЫ";
+            var profile = Cosmetics.Snapshot; balanceText.text = profile.Balance + "  ШАЛКОИНЫ";
             var changed = currentClothes != null && currentClothes != profile.EquippedIds[0];
             currentClothes = profile.EquippedIds[0];
             if (catalog.TryGet(currentClothes, out var item)) { appearance.Apply(item); currentColor = item.BasicColorIndex; }
@@ -142,6 +142,7 @@ namespace TinyTrouble
         {
             if (IsLoading || index < 0 || index >= panels.Length) return;
             preview.Close(Cosmetics.Snapshot);
+            GetComponent<LobbyLayout>().SetCosmeticView(index == 1 || index == 2, !string.IsNullOrEmpty(Cosmetics.Snapshot.EquippedIds[(int)CosmeticSlot.Pet]));
             // Показываем одну панель и меняем цвет кнопки активной вкладки.
             for (var i = 0; i < panels.Length; i++)
             {
@@ -158,12 +159,13 @@ namespace TinyTrouble
                 tabs[i].navigation = nav;
             }
             // Стрелка вверх возвращает к вкладке.
-            foreach (var selectable in panels[index].GetComponentsInChildren<Selectable>())
+            foreach (var selectable in panels[index].GetComponentsInChildren<Selectable>().Where(_ => !panels[index].GetComponent<CosmeticPanel>()))
             {
                 var nav = selectable.navigation;
                 nav.selectOnUp = tabs[index];
                 selectable.navigation = nav;
             }
+            if (panels[index].GetComponent<CosmeticPanel>()) { var panel = panels[index].GetComponent<CosmeticPanel>(); panel.RebuildNavigation(); panel.ShowSelection(); }
             if (EventSystem.current) EventSystem.current.SetSelectedGameObject(first.gameObject);
         }
         /// <summary>

@@ -50,7 +50,7 @@ namespace TinyTrouble
             previewRoot.position = new Vector3(1000, 1000, 1000);
             previewCamera.cullingMask = 1 << PreviewLayer; previewCamera.clearFlags = CameraClearFlags.SolidColor;
             previewCamera.backgroundColor = new Color(.07f, .12f, .22f); previewCamera.fieldOfView = 32; previewCamera.nearClipPlane = .01f; previewCamera.farClipPlane = 100;
-            previewCamera.enabled = false; target.enabled = false; target.raycastTarget = false;
+            previewCamera.enabled = false; target.enabled = false; target.raycastTarget = true;
             if (!mainCamera) { mainCamera = Camera.main; if (mainCamera) { originalMask = mainCamera.cullingMask; mainCamera.cullingMask &= ~(1 << PreviewLayer); } }
         }
         /// <summary>Показывает вещь без покупки или сохранения выбора.</summary>
@@ -95,6 +95,8 @@ namespace TinyTrouble
         {
             if (pet && item != null && pet.name == item.Id) return;
             Remove(ref pet);
+            var layout = GetComponent<LobbyLayout>();
+            if (layout) layout.SetCosmeticView(layout.IsCosmeticView, item != null && item.PreviewPrefab);
             if (item == null || !item.PreviewPrefab || !petAnchor) return;
             pet = Instantiate(item.PreviewPrefab, petAnchor, false); pet.name = item.Id;
         }

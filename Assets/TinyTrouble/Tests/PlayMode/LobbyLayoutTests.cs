@@ -121,7 +121,7 @@ namespace TinyTrouble.Tests
                 Assert.That(Screen.height, Is.EqualTo(size.y), "Unity не применила высоту окна");
                 Canvas.ForceUpdateCanvases();
                 var screen = new Rect(0, 0, size.x, size.y);
-                var headerNames = new[] { "Brand", "BrandCaption", "TabPlay", "TabCharacter", "TabSettings", "LobbyTag" };
+                var headerNames = new[] { "Brand", "BrandCaption", "TabPlay", "TabCharacter", "TabShop", "TabSettings", "BalanceBadge", "LobbyTag" };
                 var header = headerNames.Select(Find).Where(rect => rect.gameObject.activeInHierarchy).ToArray();
                 foreach (var rect in header) Inside(Bounds(rect), screen, size + " " + rect.name);
                 for (var a = 0; a < header.Length; a++)
@@ -131,11 +131,11 @@ namespace TinyTrouble.Tests
                     Assert.That(text.preferredHeight, Is.LessThanOrEqualTo(text.rectTransform.rect.height + 1), size + " обрезан текст " + text.name);
                 var hint = Find("RotationHint").GetComponent<Text>();
                 Assert.That(hint.preferredWidth, Is.LessThanOrEqualTo(hint.rectTransform.rect.width + 1), size + " обрезана подсказка управления");
-                foreach (var tab in new[] { "TabPlay", "TabCharacter", "TabSettings" })
+                foreach (var tab in new[] { "TabPlay", "TabCharacter", "TabShop", "TabSettings" })
                 {
                     Find(tab).GetComponent<Button>().onClick.Invoke(); yield return null;
                     Canvas.ForceUpdateCanvases();
-                    var panel = new[] { "PlayPanel", "CharacterPanel", "SettingsPanel" }.Select(Find).Single(rect => rect.gameObject.activeInHierarchy);
+                    var panel = new[] { "PlayPanel", "CharacterPanel", "ShopPanel", "SettingsPanel" }.Select(Find).Single(rect => rect.gameObject.activeInHierarchy);
                     var blocks = new[] { "Header", "Intro", "PlayerTag", "Footer", "KeyboardHint", "RotationHint", panel.name }
                         .Select(Find).Where(rect => rect.gameObject.activeInHierarchy).ToArray();
                     foreach (var block in blocks) Inside(Bounds(block), screen, size + " " + block.name);
@@ -144,7 +144,7 @@ namespace TinyTrouble.Tests
                             Assert.That(Bounds(blocks[a]).Overlaps(Bounds(blocks[b])), Is.False, size + " " + blocks[a].name + " перекрывает " + blocks[b].name);
                     Inside(Bounds(panel), screen, size + " " + panel.name);
                     var content = panel.GetComponentsInChildren<RectTransform>().Where(rect =>
-                        (rect.parent == panel && rect.name != "Accent") || rect.name == "SelectionFrame").ToArray();
+                        (rect.parent == panel && rect.name != "Accent") || (rect.name == "SelectionFrame" && !panel.GetComponent<CosmeticPanel>())).ToArray();
                     foreach (var rect in content) Inside(Bounds(rect), Bounds(panel), size + " " + rect.name);
                     for (var a = 0; a < content.Length; a++)
                         for (var b = a + 1; b < content.Length; b++)

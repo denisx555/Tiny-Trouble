@@ -36,6 +36,18 @@ namespace TinyTrouble
         /// <summary>Расстояние обычного вида, безопасное расстояние и высота всех поз героя.</summary>
         float fittedDistance, safeDistance, fittedHeight;
 
+        /// <summary>Показаны ли магазин или инвентарь с общей областью просмотра.</summary>
+        bool cosmeticView;
+        /// <summary>Есть ли питомец, которому нужно оставить место на платформе.</summary>
+        bool hasPet;
+        /// <summary>Текущий режим для примерки питомца без смены открытой вкладки.</summary>
+        public bool IsCosmeticView => cosmeticView;
+        /// <summary>Меняет области только при настоящей смене режима или присутствия питомца.</summary>
+        /// <param name="active">Открыты магазин или инвентарь.</param>
+        /// <param name="hasPet">Возле героя есть питомец.</param>
+        public void SetCosmeticView(bool active, bool hasPet)
+        { if (cosmeticView == active && this.hasPet == hasPet) return; cosmeticView = active; this.hasPet = hasPet; previousSize = Vector2Int.zero; }
+
         /// <summary>Сохраняет ссылки при создании сцены, не заменяя настройки других компонентов.</summary>
         /// <param name="camera">Камера, которая показывает героя.</param>
         /// <param name="character">Корень персонажа.</param>
@@ -102,7 +114,7 @@ namespace TinyTrouble
             var headerHeight = compact ? 146f : 122f;
             Place("Header", 0, height - headerHeight, width, headerHeight);
             LayoutHeader(width, compact);
-            Show("Intro", !compact); Show("Footer", !compact); Show("KeyboardHint", !compact);
+            Show("Intro", !compact && !cosmeticView); Show("Footer", !compact && !cosmeticView); Show("KeyboardHint", !compact);
             var panelWidth = stacked ? width - 48 : 425;
             var panelHeight = stacked ? Mathf.Clamp(height * .32f, 240, 300) : 350;
             var panelX = stacked ? 24 : width - panelWidth - 48;
@@ -115,20 +127,21 @@ namespace TinyTrouble
             }
             LayoutPanels(panelWidth, panelHeight, stacked);
             var tagY = height - headerHeight - 78;
-            var heroCenterX = !stacked && compact ? (48 + width - 500) / 2 : width / 2;
+            var cosmeticPanelWidth = stacked ? width - 48 : Mathf.Clamp(width * .5f, 480, 820);
+            var cosmeticPanelHeight = stacked ? Mathf.Clamp(height * .5f, 440, 650) : height - headerHeight - 80;
+            var cosmeticPanelX = stacked ? 24 : width - cosmeticPanelWidth - 48;
+            foreach (var panel in GetComponentsInChildren<CosmeticPanel>(true))
+                Place((RectTransform)panel.transform, cosmeticPanelX, stacked ? 24 : 64, cosmeticPanelWidth, cosmeticPanelHeight);
+            var heroCenterX = cosmeticView ? stacked ? width / 2 : (48 + cosmeticPanelX - 24) / 2 : !stacked && compact ? (48 + width - 500) / 2 : width / 2;
             Place("PlayerTag", heroCenterX - 123, tagY, 246, 62);
-            var hintY = stacked ? panelY + panelHeight + 8 : 24;
+            var hintY = stacked ? cosmeticView ? 24 + cosmeticPanelHeight + 8 : panelY + panelHeight + 8 : 24;
             TextBox("RotationHint", stacked ? 24 : heroCenterX - 225, hintY, stacked ? width - 48 : 450, 28, 16, TextAnchor.MiddleCenter);
-            elements["RotationHint"].GetComponent<Text>().text = compact ? CompactRotationHint + " · Колёсико"
-                : "ЛКМ — поворот · Колёсико — приближение";
-            Place("Intro", 48, 450, 420, 320);
-            // Описание тоже должно помещаться внутри своей области, без наложения строк.
-            TextBox("IntroCopy", 0, 0, 410, 60, 18);
-            Place("Footer", 48, 24, 380, 28);
-            Place("KeyboardHint", width - 428, 24, 380, 28);
-            var heroArea = stacked
-                ? Rect.MinMaxRect(48, hintY + 48, width - 48, tagY - 18)
-                : Rect.MinMaxRect(compact ? 48 : 500, 88, width - 500, tagY - 18);
+            elements["RotationHint"].GetComponent<Text>().text = compact ? CompactRotationHint + " · Колёсико" : "ЛКМ — поворот · Колёсико — приближение";
+            Place("Intro", 48, 450, 420, 320); TextBox("IntroCopy", 0, 0, 410, 60, 18);
+            Place("Footer", 48, 24, 380, 28); Place("KeyboardHint", width - 428, 24, 380, 28);
+            var heroArea = stacked ? Rect.MinMaxRect(48, hintY + 48, width - 48, tagY - 18)
+                : cosmeticView ? Rect.MinMaxRect(48, 88, cosmeticPanelX - 24, tagY - 18) : Rect.MinMaxRect(compact ? 48 : 500, 88, width - 500, tagY - 18);
+            if (elements.ContainsKey("CosmeticObjectImage")) Place("CosmeticObjectImage", heroArea.x, heroArea.y, heroArea.width, heroArea.height);
             FitCamera(heroArea, width, height);
         }
 
@@ -137,12 +150,16 @@ namespace TinyTrouble
         /// <param name="compact">Нужно ли расположить вкладки отдельной строкой.</param>
         void LayoutHeader(float width, bool compact)
         {
-            TextBox("Brand", compact ? 24 : 48, compact ? 100 : 64, 350, compact ? 34 : 44, compact ? 28 : 31);
+            TextBox("Brand", compact ? 24 : 48, compact ? 100 : 64, 330, compact ? 34 : 44, compact ? 28 : 31);
             TextBox("BrandCaption", compact ? 24 : 48, compact ? 76 : 35, 350, 22, 12);
-            Show("LobbyTag", !compact);
+            Show("LobbyTag", !compact && !elements.ContainsKey("TabShop"));
             Place("LobbyTag", width - 198, 42, 150, 38);
             var hasShop = elements.ContainsKey("TabShop"); var count = hasShop ? 4 : 3;
-            if (hasShop) TextBox("BalanceBadge", width - (compact ? 314 : 338), compact ? 100 : 42, 290, 36, compact ? 16 : 17, TextAnchor.MiddleRight);
+            if (hasShop)
+            {
+                TextBox("BalanceBadge", width - (compact ? 314 : 338), compact ? 100 : 42, 290, 36, compact ? 16 : 17, TextAnchor.MiddleRight);
+                Place("CurrencyCoin", width - (compact ? 350 : 374), compact ? 102 : 44, 32, 32);
+            }
             var tabWidth = compact ? (width - 48 - 8 * (count - 1)) / count : hasShop ? Mathf.Min(180, (width - 800) / 4) : 204;
             var start = compact ? 24 : hasShop ? 420 : width / 2 - 322;
             var index = 0;
@@ -205,6 +222,7 @@ namespace TinyTrouble
                 bounds = new Bounds(hero.position + Vector3.Scale(local.center, scale), Vector3.Scale(local.size, scale));
             }
             else foreach (var renderer in hero.GetComponentsInChildren<Renderer>()) bounds.Encapsulate(renderer.bounds);
+            if (hasPet) bounds.Encapsulate(new Bounds(hero.position + new Vector3(1, .5f, -.05f), new Vector3(.65f, 1, .6f)));
             // Запас по ширине учитывает вращение, по высоте — лёгкое покачивание персонажа.
             var reachX = Mathf.Max(Mathf.Abs(bounds.min.x - hero.position.x), Mathf.Abs(bounds.max.x - hero.position.x));
             var reachZ = Mathf.Max(Mathf.Abs(bounds.min.z - hero.position.z), Mathf.Abs(bounds.max.z - hero.position.z));

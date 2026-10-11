@@ -91,6 +91,7 @@ namespace TinyTrouble.Tests
             Assert.That(Vector3.Distance(Camera.main.transform.position, close), Is.LessThan(.01f), "Предел приближения не остановил камеру");
             Scroll(HeadPointer(), -1000);
             yield return new WaitForSecondsRealtime(.8f);
+            yield return WaitForZoomToSettle();
             var far = Camera.main.transform.position;
             Assert.That(far.z, Is.LessThan(close.z - 1), "Колёсико вниз не отдалило героя");
             Scroll(HeadPointer(), -1000);
@@ -98,6 +99,17 @@ namespace TinyTrouble.Tests
             Assert.That(Vector3.Distance(Camera.main.transform.position, far), Is.LessThan(.01f), "Предел отдаления не остановил камеру");
         }
 
+        /// <summary>Дожидается завершения плавного движения, чтобы проверка предела не измеряла остаток перехода.</summary>
+        /// <returns>Ожидание кадров, ограниченное двумя секундами.</returns>
+        static IEnumerator WaitForZoomToSettle()
+        {
+            var layout = Object.FindObjectOfType<LobbyLayout>();
+            var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var current = typeof(LobbyLayout).GetField("currentZoom", flags); var target = typeof(LobbyLayout).GetField("targetZoom", flags);
+            var deadline = Time.realtimeSinceStartup + 2;
+            while (!current.GetValue(layout).Equals(target.GetValue(layout)) && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(current.GetValue(layout), Is.EqualTo(target.GetValue(layout)), "Плавное приближение не завершилось");
+        }
         /// <summary>Колёсико над вкладкой и ползунком не приближает героя.</summary>
         /// <returns>Ожидание переключения вкладки и кадров после прокрутки.</returns>
         [UnityTest] public IEnumerator WheelOverControlsDoesNotMoveCamera()
@@ -124,12 +136,14 @@ namespace TinyTrouble.Tests
             Scroll(HeadPointer(), 5);
             yield return new WaitForSecondsRealtime(.8f);
             var close = Camera.main.transform.position;
+            var layoutBefore = Object.FindObjectOfType<LobbyLayout>();
+            var zoomField = typeof(LobbyLayout).GetField("targetZoom", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance); var chosenZoom = zoomField.GetValue(layoutBefore);
             Assert.That(Vector3.Distance(close, before), Is.GreaterThan(.5f), "Приближение не применено");
             foreach (var name in new[] { "TabCharacter", "TabSettings", "TabPlay" })
             {
                 GameObject.Find(name).GetComponent<Button>().onClick.Invoke();
                 yield return null;
-                Assert.That(Vector3.Distance(Camera.main.transform.position, close), Is.LessThan(.01f), "Вкладка сбросила приближение");
+                Assert.That(zoomField.GetValue(layoutBefore), Is.EqualTo(chosenZoom), "Вкладка сбросила выбранное приближение");
             }
             var layout = Object.FindObjectOfType<LobbyLayout>();
             layout.enabled = false; layout.enabled = true;
