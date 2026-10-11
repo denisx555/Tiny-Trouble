@@ -22,7 +22,7 @@ namespace TinyTrouble.Tests
                 Assert.That(closure, Is.EqualTo(right.localScale.y / rightScale.y).Within(.001f));
                 smallest = Mathf.Min(smallest, closure);
                 if (started < 0 && closure < .999f) started = i * .01f;
-                if (started >= 0 && closure >= .999f) { finished = i * .01f; break; }
+                if (started >= 0 && closure == 1f) { finished = i * .01f; break; }
             }
             Assert.That(started, Is.InRange(3f, 6.02f));
             Assert.That(finished - started, Is.EqualTo(.16f).Within(.02f));

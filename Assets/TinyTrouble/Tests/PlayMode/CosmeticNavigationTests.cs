@@ -39,6 +39,10 @@ namespace TinyTrouble.Tests
         [UnityTest] public IEnumerator ShopAndInventoryFitAllSupportedSizes()
         {
             var values = new[] { new Vector2Int(720, 1280), new Vector2Int(1920, 1080), new Vector2Int(1024, 1024), new Vector2Int(390, 844), new Vector2Int(844, 390), new Vector2Int(1024, 768), new Vector2Int(1050, 1000), new Vector2Int(1051, 1000), new Vector2Int(1100, 1000), new Vector2Int(1440, 1000), new Vector2Int(1450, 1000), new Vector2Int(2560, 1080), new Vector2Int(1280, 720) };
+            var catalog = UnityEditor.AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/TinyTrouble/Cosmetics/Catalog.asset");
+            var profile = new CosmeticProfile { Balance = 1000, OwnedIds = catalog.Items.Where(i => i.Price > 0).Select(i => i.Id).ToArray() }; profile.EquippedIds[0] = "base-yellow";
+            PlayerPrefs.SetString(CosmeticProfileStore.ProfileKey, JsonUtility.ToJson(profile));
+            yield return SceneManager.LoadSceneAsync("Lobby"); yield return null;
             var controller = Object.FindObjectOfType<LobbyController>();
             foreach (var size in values)
             {
@@ -48,6 +52,9 @@ namespace TinyTrouble.Tests
                 {
                     controller.SelectTab(tab); yield return null; Canvas.ForceUpdateCanvases();
                     var panel = controller.GetComponentsInChildren<CosmeticPanel>().Single(); var root = (RectTransform)panel.transform;
+                    for (var category = 0; category < 8; category++)
+                    {
+                    panel.SelectCategory((CosmeticCategory)category); yield return null; Canvas.ForceUpdateCanvases();
                     Inside(Bounds(root), screen, size + " panel");
                     foreach (var button in panel.GetComponentsInChildren<Button>().Where(b => b.name.StartsWith("Category"))) Inside(Bounds((RectTransform)button.transform), Bounds(root), button.name);
                     var list = Bounds(Find(root, "CatalogScroll")); var action = Bounds(Find(root, "ActionButton")); var description = Bounds(Find(root, "Description"));
@@ -55,7 +62,8 @@ namespace TinyTrouble.Tests
                     Assert.That(Bounds(Find(controller.transform, "CosmeticObjectImage")).Overlaps(Bounds(root)), Is.False, size + " preview/panel");
                     foreach (var text in panel.GetComponentsInChildren<Text>().Where(t => !t.GetComponentInParent<CosmeticCard>()))
                         Assert.That(text.preferredHeight, Is.LessThanOrEqualTo(text.rectTransform.rect.height + 1), size + " " + text.name);
-                    foreach (var name in new[] { "TabPlay", "TabCharacter", "TabShop", "TabSettings", "BalanceBadge" }) Inside(Bounds(Find(controller.transform, name)), screen, size + " " + name);
+                    foreach (var name in new[] { "TabPlay", "TabCharacter", "TabShop", "TabSettings", "BalanceBadge", "CurrencyCoin" }) Inside(Bounds(Find(controller.transform, name)), screen, size + " " + name);
+                    }
                 }
             }
         }
