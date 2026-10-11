@@ -158,7 +158,8 @@ namespace TinyTrouble
             if (result == CosmeticOperationResult.Success)
             {
                 operationStatus.text = mode == CosmeticPanelMode.Shop ? "Куплено! Вещь появилась в инвентаре." : "Выбор сохранён";
-                if (mode == CosmeticPanelMode.Shop || item.Category == CosmeticCategory.Dance) preview.Show(item);
+                // Обновление профиля возвращает надетое; затем снова показываем выбранную карточку.
+                preview.Show(item);
             }
             else if (result == CosmeticOperationResult.SaveFailed) operationStatus.text = "Не удалось сохранить. Изменение не выполнено.";
             else if (result == CosmeticOperationResult.ReadOnly) operationStatus.text = "Сохранение недоступно. Изменение не выполнено.";

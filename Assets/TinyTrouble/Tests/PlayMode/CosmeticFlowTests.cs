@@ -64,6 +64,33 @@ namespace TinyTrouble.Tests
             controller.SelectTab(0);
             Assert.That(hoodie.sharedMaterial.mainTexture, Is.Null);
         }
+        /// <summary>Применение каждого объёмного предмета сохраняет его крупный просмотр до выхода из инвентаря.</summary>
+        /// <returns>Ожидание загрузки и удаления прежних моделей.</returns>
+        [UnityTest] public IEnumerator ApplyingInventoryObjectKeepsSelectedPreviewUntilExit()
+        {
+            var ids = new[] { "pistol-ice", "spray-boom", "parachute-clouds", "trail-stars", "pickaxe-ice" };
+            var profile = new CosmeticProfile { Balance = 300, OwnedIds = ids }; profile.EquippedIds[0] = "base-yellow";
+            PlayerPrefs.SetString(CosmeticProfileStore.ProfileKey, JsonUtility.ToJson(profile));
+            yield return SceneManager.LoadSceneAsync("Lobby"); yield return null;
+            var catalog = UnityEditor.AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/TinyTrouble/Cosmetics/Catalog.asset");
+            var controller = Object.FindObjectOfType<LobbyController>(); controller.SelectTab(1); var inventory = Panel("CharacterPanel");
+            var image = controller.GetComponentInChildren<RawImage>(true);
+            var camera = controller.GetComponentInChildren<Camera>(true); var stage = GameObject.Find("CosmeticPreviewRoot").transform;
+            foreach (var id in ids)
+            {
+                catalog.TryGet(id, out var item); inventory.SelectCategory(item.Category); inventory.SelectItem(id); yield return null;
+                Assert.That(image.enabled, Is.True); Click(inventory, "ActionButton"); yield return null;
+                Assert.That(controller.Cosmetics.Snapshot.EquippedIds[(int)item.Slot], Is.EqualTo(id));
+                Assert.That(controller.Cosmetics.Snapshot.Balance, Is.EqualTo(300));
+                Assert.That(image.enabled, Is.True, id + " исчез из просмотра после применения");
+                Assert.That(camera.enabled, Is.True);
+                var models = stage.Cast<Transform>().Where(t => !t.GetComponent<Light>()).ToArray();
+                Assert.That(models.Length, Is.EqualTo(1)); Assert.That(models[0].name, Is.EqualTo(id));
+            }
+            controller.SelectTab(0); yield return null;
+            Assert.That(image.enabled, Is.False); Assert.That(camera.enabled, Is.False); Assert.That(stage.Cast<Transform>().Count(t => !t.GetComponent<Light>()), Is.Zero);
+            Assert.That(GameObject.Find("LobbyCharacter").GetComponent<CharacterAppearance>().AppliedId, Is.EqualTo("base-yellow"));
+        }
         /// <summary>Недостаток средств, повторная покупка и ошибка записи не показываются успехом.</summary>
         [Test] public void InsufficientDuplicateAndFailedSaveShowStatus()
         {
