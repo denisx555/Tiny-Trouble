@@ -211,7 +211,7 @@ get_test_job(job_id=<ID>, wait_timeout=30, include_failed_tests=true)
 - `CosmeticProfile Snapshot { get; }` возвращает копию; `bool CanWrite { get; }`, `string Error { get; }`.
 - `bool Owns(string id)`, `CosmeticOperationResult Buy(string id)`, `CosmeticOperationResult Equip(string id)`, `event Action Changed`.
 
-- [ ] **1. Написать доменные тесты.**
+- [x] **1. Написать доменные тесты.**
   `BuyDeductsNewPriceExactlyOnce`: купить `stripes` при 1000 → Success,
   Balance=600, OwnedIds содержит один stripes; второй вызов AlreadyOwned,
   Balance=600, ни лишней записи, ни второго Changed; одежда ещё base-yellow.
@@ -235,15 +235,15 @@ get_test_job(job_id=<ID>, wait_timeout=30, include_failed_tests=true)
   Assert.That(service.Snapshot.Balance, Is.EqualTo(600));
   Assert.That(service.Snapshot.EquippedIds[0], Is.EqualTo("base-yellow"));
   ```
-- [ ] **2. Запустить `CosmeticServiceTests` EditMode.** Подтвердить красные
+- [x] **2. Запустить `CosmeticServiceTests` EditMode.** Подтвердить красные
   утверждения о деньгах/выборе/событии.
-- [ ] **3. Реализовать операции.** Проверить ID/цену/доступность, создать
+- [x] **3. Реализовать операции.** Проверить ID/цену/доступность, создать
   копию, записать её и только затем заменить активное состояние и отправить
   Changed. При бесплатной одежде передавать BasicColorIndex в Save.
   AlreadyEquipped не пишет профиль; повторный танец разрешается UI отдельно.
-- [ ] **4. Повторить тесты сервиса и store.** Ни одного частичного
+- [x] **4. Повторить тесты сервиса и store.** Ни одного частичного
   приобретения или повторного списания.
-- [ ] **5. Коммит:** `Добавить покупки и выбор косметики`.
+- [x] **5. Коммит:** `Добавить покупки и выбор косметики`.
 
 ### Task 4: Собственные ассеты и внешний вид одежды
 
