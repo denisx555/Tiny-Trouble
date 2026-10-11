@@ -11,8 +11,76 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e1b981c24997dbb9390ba03c75f69fb5, type: 3}
   m_Name: Catalog
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   items:
+  - Id: pistol-gray
+    Name: "\u0421\u0435\u0440\u044B\u0439"
+    Description: "\u0411\u0435\u0441\u043F\u043B\u0430\u0442\u043D\u044B\u0439 \u0441\u0442\u0430\u0440\u0442\u043E\u0432\u044B\u0439
+      \u0441\u043A\u0438\u043D \u043F\u0438\u0441\u0442\u043E\u043B\u0435\u0442\u0430."
+    Category: 1
+    Slot: 1
+    Price: 0
+    BasicColorIndex: -1
+    Icon: {fileID: 21300000, guid: f312ff119130cb040abfec354dc1efd1, type: 3}
+    Material: {fileID: 2100000, guid: 579d57192455ecdfa9027c800cb14f26, type: 2}
+    PreviewPrefab: {fileID: 801504666484775058, guid: 6718dc59c5928f6d19e21a4ff3d2e11e, type: 3}
+  - Id: rifle-gray
+    Name: "\u0421\u0435\u0440\u044B\u0439"
+    Description: "\u0411\u0435\u0441\u043F\u043B\u0430\u0442\u043D\u044B\u0439 \u0441\u0442\u0430\u0440\u0442\u043E\u0432\u044B\u0439
+      \u0441\u043A\u0438\u043D \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0430."
+    Category: 1
+    Slot: 2
+    Price: 0
+    BasicColorIndex: -1
+    Icon: {fileID: 21300000, guid: 2165ebd6df95694d0a23363c51470a6e, type: 3}
+    Material: {fileID: 2100000, guid: ddabc094a671d0fc6a5266ad891baefc, type: 2}
+    PreviewPrefab: {fileID: 6843891254243186807, guid: fdcddd16bf6d3d0968bd30311cb3b88d, type: 3}
+  - Id: shotgun-gray
+    Name: "\u0421\u0435\u0440\u044B\u0439"
+    Description: "\u0411\u0435\u0441\u043F\u043B\u0430\u0442\u043D\u044B\u0439 \u0441\u0442\u0430\u0440\u0442\u043E\u0432\u044B\u0439
+      \u0441\u043A\u0438\u043D \u0434\u0440\u043E\u0431\u043E\u0432\u0438\u043A\u0430."
+    Category: 1
+    Slot: 3
+    Price: 0
+    BasicColorIndex: -1
+    Icon: {fileID: 21300000, guid: 2bbff106b6c0f6ee7952bcbe1d4adae1, type: 3}
+    Material: {fileID: 2100000, guid: be19d4a9e8fbf4f63abf7a07818b7305, type: 2}
+    PreviewPrefab: {fileID: 287733155822079680, guid: 91fa27c9978935d59979468387b9d635, type: 3}
+  - Id: parachute-gray
+    Name: "\u0421\u0435\u0440\u044B\u0439"
+    Description: "\u0421\u0435\u0440\u044B\u0439 \u043A\u0443\u043F\u043E\u043B \u0434\u043B\u044F
+      \u043F\u0435\u0440\u0432\u044B\u0445 \u043F\u0440\u0438\u0437\u0435\u043C\u043B\u0435\u043D\u0438\u0439."
+    Category: 4
+    Slot: 6
+    Price: 0
+    BasicColorIndex: -1
+    Icon: {fileID: 21300000, guid: 4eaadd898da85a6e98551172342d6a44, type: 3}
+    Material: {fileID: 2100000, guid: 0c25a1348fa5b415c871afad92526757, type: 2}
+    PreviewPrefab: {fileID: 3415925699106991838, guid: 405404619dbc756c1a22134e380cb51e, type: 3}
+  - Id: trail-gray
+    Name: "\u0412\u043E\u0437\u0434\u0443\u0445"
+    Description: "\u041C\u044F\u0433\u043A\u0438\u0435 \u0441\u0435\u0440\u044B\u0435
+      \u043F\u043E\u043B\u043E\u0441\u044B \u0432\u043E\u0437\u0434\u0443\u0445\u0430
+      \u0437\u0430 \u043F\u0430\u0434\u0430\u044E\u0449\u0438\u043C \u0433\u0435\u0440\u043E\u0435\u043C."
+    Category: 6
+    Slot: 8
+    Price: 0
+    BasicColorIndex: -1
+    Icon: {fileID: 21300000, guid: 0255266875aa8c543895ef9922a5445a, type: 3}
+    Material: {fileID: 2100000, guid: 4f7753db63ee66f939b2c45295e359d7, type: 2}
+    PreviewPrefab: {fileID: 154609765295610068, guid: 1a7a9c949a6670bb58d7e50e59e2511f, type: 3}
+  - Id: pickaxe-gray
+    Name: "\u0421\u0435\u0440\u0430\u044F"
+    Description: "\u0411\u0435\u0441\u043F\u043B\u0430\u0442\u043D\u0430\u044F \u0441\u0442\u0430\u0440\u0442\u043E\u0432\u0430\u044F
+      \u043A\u0438\u0440\u043A\u0430 \u0441\u043E \u0441\u0442\u0430\u043B\u044C\u043D\u044B\u043C
+      \u043B\u0435\u0437\u0432\u0438\u0435\u043C."
+    Category: 7
+    Slot: 9
+    Price: 0
+    BasicColorIndex: -1
+    Icon: {fileID: 21300000, guid: 0d0b4d66cc4b34a0fbdad403500ca112, type: 3}
+    Material: {fileID: 2100000, guid: 07c6b0e4838a08ec9be4ba0547d7fa32, type: 2}
+    PreviewPrefab: {fileID: 4076043147350111612, guid: 5a473e534f65b93b9a251d85010224f2, type: 3}
   - Id: stripes
     Name: "\u041F\u043E\u043B\u043E\u0441\u0430\u0442\u044B\u0439"
     Description: "\u042F\u0440\u043A\u0438\u0435 \u043F\u043E\u043B\u043E\u0441\u044B
@@ -311,7 +379,7 @@ MonoBehaviour:
   - Id: pickaxe-space
     Name: "\u041A\u043E\u0441\u043C\u0438\u0447\u0435\u0441\u043A\u0430\u044F"
     Description: "\u041A\u0438\u0440\u043A\u0430 \u0441\u043E \u0437\u0432\u0451\u0437\u0434\u0430\u043C\u0438
-      \u0434\u043B\u044F \u043D\u043E\u0432\u044B\u0445 \u043F\u0440\u0438\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0439."
+      \u0434\u043B\u044F \u043A\u0440\u0443\u0442\u043E\u0441\u0442\u0438."
     Category: 7
     Slot: 9
     Price: 400

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path d="m62 138 78-5 4-75 76 61 56-91 31 94 90-57-9 95 83-15-50 75 73 39-76 27 47 75-98-12-7 99-71-61-39 98-43-81-84 44 15-89-99 15 54-78-72-44 73-33z" fill="#ff7742" stroke="#fff8df" stroke-width="25"/>
+    <path d="m62 138 78-5 4-75 76 61 56-91 31 94 90-57-9 95 83-15-50 75 73 39-76 27 47 75-98-12-7 99-71-61-39 98-43-81-84 44 15-89-99 15 54-78-72-44 73-33z" fill="#ff7546" stroke="#24263f" stroke-width="12"/>
+    <path d="m101 181 74-5 1-59 48 52 47-64 21 67 65-37-10 71 65-12-41 53 52 32-57 15 31 48-63-9-13 66-50-36-28 66-36-59-62 31 9-55-66 4 35-52-47-28 47-25z" fill="#ffe459"/>
+    <g transform="rotate(-9 256 258)" font-family="DejaVu Sans" font-size="104" font-weight="bold" font-style="italic" text-anchor="middle">
+      <text x="262" y="301" fill="#ff6952" stroke="#24263f" stroke-width="20">БУМ!</text>
+      <text x="254" y="285" fill="#fff9e9" stroke="#24263f" stroke-width="12">БУМ!</text>
+      <text x="254" y="285" fill="#fff9e9">БУМ!</text>
+    </g>
+    <path d="m53 61 25 33m356 330 22 18M442 81l-26 31" fill="none" stroke="#65e4ed" stroke-width="15"/>
+    <circle cx="58" cy="371" r="11" fill="#fff6d5"/><circle cx="452" cy="198" r="9" fill="#fff6d5"/>
+  </g>
+</svg>

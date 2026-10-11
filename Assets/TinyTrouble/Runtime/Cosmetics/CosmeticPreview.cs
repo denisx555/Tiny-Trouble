@@ -33,6 +33,16 @@ namespace TinyTrouble
         Camera mainCamera;
         /// <summary>Слои основной камеры до подключения просмотра.</summary>
         int originalMask;
+        /// <summary>Ввод мыши на отдельном изображении предмета.</summary>
+        CosmeticPreviewInput input;
+        /// <summary>Углы камеры вокруг предмета и доля приближения от общего вида.</summary>
+        float yaw, pitch, zoom;
+        /// <summary>Центр и радиус образца; не скачут вслед за анимированными частицами.</summary>
+        Vector3 modelCenter;
+        /// <summary>Размер сферы, в которой помещается весь предмет.</summary>
+        float modelRadius;
+        /// <summary>Плоский рисунок на стене требует ограничения угла, чтобы рисунок оставался виден.</summary>
+        bool isSpray;
 
         /// <summary>Подключает сохранённые ссылки сцены к просмотру.</summary>
         /// <param name="catalog">Каталог товаров.</param>
@@ -49,8 +59,11 @@ namespace TinyTrouble
             this.previewCamera = previewCamera; this.target = target; this.previewRoot = previewRoot; this.petAnchor = petAnchor;
             previewRoot.position = new Vector3(1000, 1000, 1000);
             previewCamera.cullingMask = 1 << PreviewLayer; previewCamera.clearFlags = CameraClearFlags.SolidColor;
-            previewCamera.backgroundColor = new Color(.07f, .12f, .22f); previewCamera.fieldOfView = 32; previewCamera.nearClipPlane = .01f; previewCamera.farClipPlane = 100;
+            previewCamera.backgroundColor = new Color(.07f, .12f, .26f); previewCamera.fieldOfView = 32; previewCamera.nearClipPlane = .01f; previewCamera.farClipPlane = 100;
             previewCamera.enabled = false; target.enabled = false; target.raycastTarget = true;
+            input = target.GetComponent<CosmeticPreviewInput>();
+            if (!input) input = target.gameObject.AddComponent<CosmeticPreviewInput>();
+            input.Configure(this);
             if (!mainCamera) { mainCamera = Camera.main; if (mainCamera) { originalMask = mainCamera.cullingMask; mainCamera.cullingMask &= ~(1 << PreviewLayer); } }
         }
         /// <summary>Показывает вещь без покупки или сохранения выбора.</summary>
@@ -69,10 +82,13 @@ namespace TinyTrouble
                 var miniature = Instantiate(hero.gameObject, model.transform, false); miniature.name = "FallingHero";
                 foreach (var behaviour in miniature.GetComponents<MonoBehaviour>()) behaviour.enabled = false;
                 foreach (var collider in miniature.GetComponentsInChildren<Collider>()) Destroy(collider);
-                miniature.transform.localPosition = new Vector3(0, -.65f, 0); miniature.transform.localRotation = Quaternion.Euler(25, 0, 0); miniature.transform.localScale = Vector3.one * .28f;
+                miniature.transform.localPosition = new Vector3(0, -.65f, 0);
                 model.AddComponent<CosmeticTrailPreview>().Configure(item);
             }
             foreach (var part in model.GetComponentsInChildren<Transform>()) part.gameObject.layer = PreviewLayer;
+            isSpray = item.Category == CosmeticCategory.Spray;
+            yaw = isSpray ? 0 : -25; pitch = isSpray ? 0 : item.Category == CosmeticCategory.Trail ? -20 : 12; zoom = 0;
+            Measure(item.Category == CosmeticCategory.Trail);
             target.enabled = true; ResizeImage(); Frame(); previewCamera.enabled = true;
         }
         /// <summary>Возвращает сохранённую одежду и питомца; временные товары и танец удаляются.</summary>
@@ -80,6 +96,7 @@ namespace TinyTrouble
         public void Restore(CosmeticProfile profile)
         {
             if (profile != null) saved = profile.Clone();
+            if (input) input.Cancel();
             Remove(ref model); if (dance) dance.Stop();
             if (target) target.enabled = false; if (previewCamera) previewCamera.enabled = false;
             if (saved == null) return;
@@ -110,15 +127,40 @@ namespace TinyTrouble
             ReleaseImage(); image = new RenderTexture(width, height, 24) { name = "TinyTrouble.CosmeticPreview" }; image.Create();
             previewCamera.targetTexture = image; target.texture = image; previewCamera.aspect = width / (float)height;
         }
-        /// <summary>Кадрирует весь объёмный товар с небольшим запасом по краям.</summary>
-        void Frame()
+        /// <summary>Измеряет общий вид один раз, чтобы дыхание и частицы не дёргали камеру.</summary>
+        /// <param name="animatedTrail">Нужно ли оставить запас для движения следа.</param>
+        void Measure(bool animatedTrail)
         {
             if (!model) return;
             var surfaces = model.GetComponentsInChildren<Renderer>(); if (surfaces.Length == 0) return;
             var bounds = surfaces[0].bounds; foreach (var surface in surfaces.Skip(1)) bounds.Encapsulate(surface.bounds);
-            var distance = bounds.extents.magnitude / Mathf.Tan(previewCamera.fieldOfView * .5f * Mathf.Deg2Rad) * 1.2f / Mathf.Min(1, previewCamera.aspect);
-            previewCamera.transform.position = bounds.center + new Vector3(.5f, .2f, -1).normalized * distance;
-            previewCamera.transform.LookAt(bounds.center);
+            modelCenter = bounds.center;
+            modelRadius = Mathf.Max(.05f, bounds.extents.magnitude + (animatedTrail ? .45f : 0));
+        }
+        /// <summary>Поворачивает общий вид предмета; спрей ограничен углами видимости стены.</summary>
+        /// <param name="delta">Смещение в долях ширины и высоты картинки.</param>
+        public void Turn(Vector2 delta)
+        {
+            if (!model || !target.enabled || float.IsNaN(delta.x) || float.IsNaN(delta.y) || float.IsInfinity(delta.x) || float.IsInfinity(delta.y)) return;
+            yaw = Mathf.Repeat(yaw + delta.x * 240 + 180, 360) - 180;
+            pitch = Mathf.Clamp(pitch + delta.y * 150, -70, 70);
+            if (isSpray) { yaw = Mathf.Clamp(yaw, -60, 60); pitch = Mathf.Clamp(pitch, -45, 45); }
+        }
+        /// <summary>Меняет приближение в безопасных пределах без записи выбора игрока.</summary>
+        /// <param name="amount">Положительное значение приближает предмет.</param>
+        public void Zoom(float amount)
+        {
+            if (!model || !target.enabled || float.IsNaN(amount) || float.IsInfinity(amount)) return;
+            zoom = Mathf.Clamp01(zoom + amount);
+        }
+        /// <summary>Размещает камеру вокруг постоянного центра; общий вид помещается в любом формате окна.</summary>
+        void Frame()
+        {
+            if (!model) return;
+            var distance = modelRadius / Mathf.Sin(previewCamera.fieldOfView * .5f * Mathf.Deg2Rad) * 1.12f / Mathf.Min(1, previewCamera.aspect);
+            distance *= Mathf.Lerp(1, .4f, zoom);
+            previewCamera.transform.position = modelCenter + Quaternion.Euler(pitch, yaw, 0) * Vector3.back * distance;
+            previewCamera.transform.LookAt(modelCenter);
         }
         /// <summary>Следит за размером области просмотра без создания камеры каждый кадр.</summary>
         void LateUpdate() { if (target && target.enabled) { ResizeImage(); Frame(); } }

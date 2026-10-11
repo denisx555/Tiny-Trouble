@@ -62,7 +62,7 @@ namespace TinyTrouble.Tests
             Assert.That(result.Profile.Balance, Is.Zero);
             Assert.That(result.Profile.OwnedIds, Is.EquivalentTo(new[] { "lost-id", "rifle-lime" }));
             Assert.That(result.Profile.EquippedIds[0], Is.EqualTo("base-yellow"));
-            Assert.That(result.Profile.EquippedIds[1], Is.Null.Or.Empty);
+            Assert.That(result.Profile.EquippedIds[1], Is.EqualTo("pistol-gray"));
             Assert.That(result.Profile.EquippedIds[2], Is.EqualTo("rifle-lime"));
         }
         /// <summary>Повреждение не выдаёт новый стартовый запас и не уничтожает исходную строку.</summary>

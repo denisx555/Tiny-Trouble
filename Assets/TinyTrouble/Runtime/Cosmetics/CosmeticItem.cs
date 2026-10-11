@@ -20,9 +20,9 @@ namespace TinyTrouble
         public CosmeticCategory Category;
         /// <summary>Место, занятое после выбора этой вещи.</summary>
         public CosmeticSlot Slot;
-        /// <summary>Цена в Шалкоинах; ноль обозначает бесплатную одежду.</summary>
+        /// <summary>Цена в Шалкоинах; ноль обозначает бесплатную стартовую вещь.</summary>
         public int Price;
-        /// <summary>Старый номер бесплатного цвета; у платной вещи равен −1.</summary>
+        /// <summary>Номер бесплатного цвета одежды; у других вещей равен −1.</summary>
         public int BasicColorIndex = -1;
         /// <summary>Картинка для маленькой карточки.</summary>
         public Sprite Icon;

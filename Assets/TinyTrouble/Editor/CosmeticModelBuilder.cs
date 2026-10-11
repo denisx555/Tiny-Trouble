@@ -27,58 +27,8 @@ namespace TinyTrouble.EditorTools
             var root = new GameObject(item.Id);
             var cream = AssetDatabase.LoadAssetAtPath<Material>("Assets/TinyTrouble/Materials/Cream.mat");
             var ink = AssetDatabase.LoadAssetAtPath<Material>("Assets/TinyTrouble/Materials/Sneakers.mat");
-            if (item.Category == CosmeticCategory.Weapon)
-            {
-                var length = item.Slot == CosmeticSlot.Pistol ? .65f : item.Slot == CosmeticSlot.Rifle ? 1.5f : 1.25f;
-                Part(root, "Корпус", PrimitiveType.Cube, Vector3.zero, new Vector3(length, .25f, .24f), material);
-                Part(root, "Ствол", PrimitiveType.Cylinder, new Vector3(length * .6f, .02f, 0), new Vector3(.13f, .2f, .13f), ink).localRotation = Quaternion.Euler(0, 0, 90);
-                Part(root, "Рукоять", PrimitiveType.Cube, new Vector3(-length * .3f, -.3f, 0), new Vector3(.2f, .45f, .21f), material).localRotation = Quaternion.Euler(0, 0, -15);
-                if (item.Slot != CosmeticSlot.Pistol) Part(root, "Приклад", PrimitiveType.Cube, new Vector3(-length * .65f, -.08f, 0), new Vector3(.4f, .33f, .25f), material);
-                if (item.Slot == CosmeticSlot.Rifle) Part(root, "Магазин", PrimitiveType.Cube, new Vector3(.1f, -.26f, 0), new Vector3(.2f, .32f, .2f), ink);
-                if (item.Slot == CosmeticSlot.Shotgun) Part(root, "Цевьё", PrimitiveType.Cube, new Vector3(.35f, -.14f, 0), new Vector3(.4f, .18f, .3f), cream);
-            }
-            else if (item.Category == CosmeticCategory.Pickaxe)
-            {
-                Part(root, "Рукоять", PrimitiveType.Cylinder, new Vector3(0, .7f, 0), new Vector3(.1f, .7f, .1f), ink);
-                Part(root, "Лезвие", PrimitiveType.Cube, new Vector3(0, 1.25f, 0), new Vector3(1.1f, .2f, .2f), material).localRotation = Quaternion.Euler(0, 0, -12);
-                Part(root, "Наконечник", PrimitiveType.Cube, new Vector3(.55f, 1.05f, 0), new Vector3(.18f, .4f, .2f), material).localRotation = Quaternion.Euler(0, 0, 25);
-            }
-            else if (item.Category == CosmeticCategory.Parachute)
-            {
-                Part(root, "Купол", PrimitiveType.Sphere, new Vector3(0, 1.55f, 0), new Vector3(2, .8f, 1.4f), material);
-                for (var side = -1; side <= 1; side += 2)
-                    for (var depth = -1; depth <= 1; depth += 2)
-                        Rod(root, new Vector3(side * .85f, 1.4f, depth * .48f), new Vector3(side * .22f, .1f, depth * .15f), .025f, cream);
-                Part(root, "Подвес", PrimitiveType.Cube, new Vector3(0, .08f, 0), new Vector3(.5f, .12f, .4f), ink);
-            }
-            else if (item.Category == CosmeticCategory.Pet) Pet(root, item, material, cream, ink);
-            else if (item.Category == CosmeticCategory.Spray)
-                Part(root, "Рисунок", PrimitiveType.Quad, Vector3.zero, new Vector3(1.2f, 1.2f, 1), material);
-            else if (item.Category == CosmeticCategory.Trail)
-            {
-                for (var i = 0; i < (item.Id == "trail-rainbow" ? 6 : 12); i++)
-                {
-                    var angle = i * 2.4f;
-                    if (item.Id == "trail-rainbow")
-                    {
-                        var ribbon = new GameObject("Лента" + i); ribbon.transform.SetParent(root.transform, false); ribbon.transform.localPosition = new Vector3((i - 2.5f) * .07f, 0, 0);
-                        var line = ribbon.AddComponent<LineRenderer>(); line.useWorldSpace = false; line.positionCount = 8; line.widthMultiplier = .035f; line.sharedMaterial = material;
-                        for (var point = 0; point < 8; point++) line.SetPosition(point, new Vector3(Mathf.Sin(point + i) * .02f, point * .16f, 0));
-                    }
-                    else
-                    {
-                        var particle = Part(root, "Частица" + i, item.Id == "trail-stars" ? PrimitiveType.Cube : PrimitiveType.Sphere,
-                            new Vector3(Mathf.Sin(angle) * .2f, i * .1f, Mathf.Cos(angle) * .2f), Vector3.one * (.07f + i * .008f), material);
-                        particle.localRotation = Quaternion.Euler(0, 0, 45);
-                        if (item.Id == "trail-stars")
-                        {
-                            particle.localScale = new Vector3(.04f, .14f, .04f);
-                            var cross = Part(root, "Звезда" + i, PrimitiveType.Cube, particle.localPosition, new Vector3(.14f, .04f, .04f), material);
-                            cross.SetParent(particle, true); cross.localRotation = Quaternion.identity;
-                        }
-                    }
-                }
-            }
+            if (item.Category == CosmeticCategory.Pet) Pet(root, item, material, cream, ink);
+            else CosmeticEquipmentBuilder.Build(root, item, material);
             return root;
         }
 
@@ -131,16 +81,17 @@ namespace TinyTrouble.EditorTools
             Object.DestroyImmediate(part.GetComponent<Collider>()); return part.transform;
         }
 
-        /// <summary>Соединяет две точки тонким цилиндром, например стропой парашюта.</summary>
-        /// <param name="root">Родитель цилиндра.</param>
-        /// <param name="from">Первая точка.</param>
-        /// <param name="to">Вторая точка.</param>
+        /// <summary>Соединяет точки круглой антенной питомца.</summary>
+        /// <param name="root">Корень питомца.</param>
+        /// <param name="from">Начало антенны.</param>
+        /// <param name="to">Конец антенны.</param>
         /// <param name="width">Толщина.</param>
-        /// <param name="material">Цвет цилиндра.</param>
+        /// <param name="material">Цвет.</param>
         static void Rod(GameObject root, Vector3 from, Vector3 to, float width, Material material)
         {
-            var rod = Part(root, "Стропа", PrimitiveType.Cylinder, (from + to) * .5f, new Vector3(width, (to - from).magnitude * .5f, width), material);
+            var rod = Part(root, "АнтеннаСтойка", PrimitiveType.Cylinder, (from + to) * .5f, new Vector3(width, (to - from).magnitude * .5f, width), material);
             rod.localRotation = Quaternion.FromToRotation(Vector3.up, to - from);
         }
+
     }
 }

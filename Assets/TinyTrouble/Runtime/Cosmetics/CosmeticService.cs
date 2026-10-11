@@ -38,7 +38,7 @@ namespace TinyTrouble
         /// <param name="id">Код вещи.</param>
         /// <returns>Можно ли её выбрать.</returns>
         public bool Owns(string id) => catalog.TryGet(id, out var item) &&
-            (item.BasicColorIndex >= 0 || profile.OwnedIds.Contains(id));
+            (item.Price == 0 || profile.OwnedIds.Contains(id));
         /// <summary>Покупает одну вещь без автоматического применения.</summary>
         /// <param name="id">Код товара.</param>
         /// <returns>Результат операции.</returns>

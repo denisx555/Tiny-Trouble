@@ -10,6 +10,7 @@ namespace TinyTrouble.EditorTools
         /// <returns>Цвет основы рисунка.</returns>
         public static Color Tint(CosmeticItem item)
         {
+            if (item.Id.EndsWith("-gray")) return new Color(.46f, .5f, .56f);
             if (item.BasicColorIndex >= 0)
             { ColorUtility.TryParseHtmlString(new[] { "#FFD84A", "#46C8F5", "#FF646B", "#AA79FF" }[item.BasicColorIndex], out var color); return color; }
             if (item.Id.Contains("space") || item.Id.Contains("stars")) return new Color(.16f, .13f, .42f);
@@ -22,11 +23,17 @@ namespace TinyTrouble.EditorTools
             return new Color(1, .32f, .45f);
         }
 
-        /// <summary>Собирает полосы, звёзды, облака или рисунок спрея в квадратной текстуре.</summary>
+        /// <summary>Собирает узоры одежды и читает готовые собственные рисунки спреев с прозрачным фоном.</summary>
         /// <param name="item">Товар с названием рисунка.</param>
         /// <returns>Временная текстура; вызывающий код сохраняет её и удаляет из памяти.</returns>
         public static Texture2D Draw(CosmeticItem item)
         {
+            if (item.Category == CosmeticCategory.Spray)
+            {
+                var art = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                art.LoadImage(System.IO.File.ReadAllBytes(CosmeticAssetBuilder.Root + "/Artwork/" + item.Id + ".png"));
+                return art;
+            }
             const int size = 256;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
             var pixels = new Color[size * size];
@@ -50,33 +57,10 @@ namespace TinyTrouble.EditorTools
                     else if (item.Id.Contains("pop")) color = Color.HSVToRGB(((x / 32 + y / 32) % 6) / 6f, .65f, 1);
                     else if (item.Id.Contains("rainbow")) color = Color.HSVToRGB(y / (float)size, .8f, 1);
                     else if (item.Id.Contains("fire") || item.Id.Contains("sparks")) color = Color.Lerp(new Color(1, .14f, .05f), Color.yellow, y / (float)size);
-                    if (item.Category == CosmeticCategory.Spray) color = SprayPixel(item.Id, x / 256f, y / 256f);
                     pixels[y * size + x] = color;
                 }
             texture.SetPixels(pixels); texture.Apply(); return texture;
         }
 
-        /// <summary>Рисует улыбку, хитрый смайлик или яркую вспышку на нейтральном фоне.</summary>
-        /// <param name="id">Код одного из трёх спреев.</param>
-        /// <param name="x">Горизонтальная координата от нуля до единицы.</param>
-        /// <param name="y">Вертикальная координата от нуля до единицы.</param>
-        /// <returns>Цвет точки рисунка.</returns>
-        static Color SprayPixel(string id, float x, float y)
-        {
-            var p = new Vector2(x - .5f, y - .5f); var ink = new Color(.08f, .1f, .2f);
-            var radius = p.magnitude;
-            if (id == "spray-boom")
-            {
-                var edge = .32f + .09f * Mathf.Sin(Mathf.Atan2(p.y, p.x) * 12);
-                if (radius > edge) return ink;
-                if (Mathf.Abs(p.x) < .035f && p.y > -.04f && p.y < .21f || radius < .04f && p.y < -.1f) return ink;
-                return Color.Lerp(new Color(1, .3f, .12f), Color.yellow, 1 - radius / .5f);
-            }
-            if (radius > .41f) return ink;
-            if ((new Vector2(p.x - .14f, p.y - .11f)).magnitude < .035f || (new Vector2(p.x + .14f, p.y - .11f)).magnitude < .035f) return ink;
-            if (p.y < -.04f && p.y > -.2f && Mathf.Abs(p.y + .05f + .14f * Mathf.Cos(p.x * 6)) < .025f && Mathf.Abs(p.x) < .24f) return ink;
-            if (id == "spray-mischief" && Mathf.Abs(p.x) > .06f && Mathf.Abs(p.x) < .24f && Mathf.Abs(p.y - (.24f - Mathf.Abs(p.x) * .5f)) < .015f) return ink;
-            return id == "spray-smile" ? new Color(1, .82f, .12f) : new Color(.65f, .4f, 1);
-        }
     }
 }

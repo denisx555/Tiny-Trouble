@@ -106,13 +106,17 @@ namespace TinyTrouble.Tests
             Assert.That(failed.Snapshot.OwnedIds, Is.Empty);
             Assert.That(shop.GetComponentsInChildren<Text>().Single(t => t.name == "OperationStatus").text, Does.Contain("сохранить"));
         }
-        /// <summary>Пустая категория поясняется, а скины разных оружий сохраняются независимо.</summary>
+        /// <summary>Стартовые скины доступны сразу, пустая категория поясняется, а оружие выбирается независимо.</summary>
         [Test] public void InventoryFiltersAndWeaponChoicesAreIndependent()
         {
             var controller = Object.FindObjectOfType<LobbyController>(); controller.SelectTab(1); var inventory = Panel("CharacterPanel");
             inventory.SelectCategory(CosmeticCategory.Weapon);
+            Assert.That(inventory.GetComponentsInChildren<CosmeticCard>().Length, Is.EqualTo(3));
+            Assert.That(inventory.GetComponentsInChildren<Text>(true).Single(t => t.name == "EmptyMessage").gameObject.activeSelf, Is.False);
+            inventory.SelectCategory(CosmeticCategory.Dance);
             Assert.That(inventory.GetComponentsInChildren<CosmeticCard>().Length, Is.Zero);
             Assert.That(inventory.GetComponentsInChildren<Text>(true).Single(t => t.name == "EmptyMessage").gameObject.activeSelf, Is.True);
+            inventory.SelectCategory(CosmeticCategory.Weapon);
             controller.Cosmetics.Buy("pistol-ice"); controller.Cosmetics.Buy("rifle-lime"); inventory.Refresh();
             inventory.SelectItem("pistol-ice"); Click(inventory, "ActionButton"); inventory.SelectItem("rifle-lime"); Click(inventory, "ActionButton");
             Assert.That(controller.Cosmetics.Snapshot.EquippedIds[1], Is.EqualTo("pistol-ice")); Assert.That(controller.Cosmetics.Snapshot.EquippedIds[2], Is.EqualTo("rifle-lime"));

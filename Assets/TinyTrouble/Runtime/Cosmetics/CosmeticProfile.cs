@@ -9,7 +9,7 @@ namespace TinyTrouble
         public int Version = 1;
         /// <summary>Оставшиеся Шалкоины.</summary>
         public int Balance;
-        /// <summary>Коды купленных вещей; бесплатные цвета не требуют покупки.</summary>
+        /// <summary>Коды купленных вещей; бесплатные стартовые вещи не требуют покупки.</summary>
         public string[] OwnedIds = Array.Empty<string>();
         /// <summary>Коды выбранных вещей в порядке CosmeticSlot.</summary>
         public string[] EquippedIds = new string[10];

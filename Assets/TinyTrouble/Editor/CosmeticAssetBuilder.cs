@@ -14,14 +14,16 @@ namespace TinyTrouble.EditorTools
         /// <param name="catalog">Каталог, в который записываются визуальные ссылки.</param>
         public static void BuildVisuals(CosmeticCatalog catalog)
         {
-            foreach (var folder in new[] { "Materials", "Textures", "Models", "Icons" }) Directory.CreateDirectory(Root + "/" + folder);
+            foreach (var folder in new[] { "Materials", "Textures", "Models", "Icons", "Meshes" }) Directory.CreateDirectory(Root + "/" + folder);
             AssetDatabase.Refresh();
             foreach (var item in catalog.Items)
             {
                 var materialPath = Root + "/Materials/" + item.Id + ".mat";
                 var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
                 if (!material) { material = new Material(Shader.Find("Standard")); AssetDatabase.CreateAsset(material, materialPath); }
-                material.color = item.BasicColorIndex >= 0 ? CosmeticTextureBuilder.Tint(item) : Color.white;
+                var solidEquipment = item.Category == CosmeticCategory.Weapon || item.Category == CosmeticCategory.Pickaxe || item.Category == CosmeticCategory.Parachute || item.Category == CosmeticCategory.Trail;
+                material.shader = Shader.Find(item.Category == CosmeticCategory.Spray ? "Unlit/Transparent" : "Standard");
+                material.color = item.BasicColorIndex >= 0 || solidEquipment ? CosmeticTextureBuilder.Tint(item) : Color.white;
                 material.SetFloat("_Glossiness", .25f);
                 if (item.BasicColorIndex < 0)
                 {
@@ -31,10 +33,11 @@ namespace TinyTrouble.EditorTools
                     Object.DestroyImmediate(texture);
                     AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
                     var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-                    importer.wrapMode = TextureWrapMode.Repeat;
+                    importer.wrapMode = item.Category == CosmeticCategory.Spray ? TextureWrapMode.Clamp : TextureWrapMode.Repeat;
+                    importer.alphaIsTransparency = item.Category == CosmeticCategory.Spray;
                     importer.textureType = TextureImporterType.Default;
                     importer.SaveAndReimport();
-                    material.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                    material.mainTexture = solidEquipment ? null : AssetDatabase.LoadAssetAtPath<Texture2D>(path);
                 }
                 else material.mainTexture = null;
                 item.Material = material;
@@ -43,7 +46,10 @@ namespace TinyTrouble.EditorTools
                 try
                 {
                     if (item.Category != CosmeticCategory.Clothes && item.Category != CosmeticCategory.Dance)
+                    {
+                        SaveMeshes(item.Id, model);
                         item.PreviewPrefab = PrefabUtility.SaveAsPrefabAsset(model, Root + "/Models/" + item.Id + ".prefab");
+                    }
                     if (item.Category == CosmeticCategory.Clothes)
                     {
                         var appearance = model.AddComponent<CharacterAppearance>();
@@ -56,6 +62,27 @@ namespace TinyTrouble.EditorTools
             }
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
+        }
+        /// <summary>Сохраняет собственные сетки деталей, чтобы они не исчезали после перезапуска Unity.</summary>
+        /// <param name="id">Код предмета.</param>
+        /// <param name="model">Новый образец с временными сетками.</param>
+        static void SaveMeshes(string id, GameObject model)
+        {
+            var path = Root + "/Meshes/" + id + ".asset";
+            var filters = model.GetComponentsInChildren<MeshFilter>().Where(f => f.sharedMesh && string.IsNullOrEmpty(AssetDatabase.GetAssetPath(f.sharedMesh))).ToArray();
+            if (filters.Length == 0) return;
+            if (!AssetDatabase.LoadAssetAtPath<Mesh>(path)) AssetDatabase.CreateAsset(new Mesh { name = "MeshCollection" }, path);
+            var saved = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Mesh>().ToDictionary(m => m.name);
+            foreach (var filter in filters)
+            {
+                var mesh = filter.sharedMesh;
+                if (saved.TryGetValue(mesh.name, out var previous))
+                { // Обновляем сетку через её свойства: простое копирование оставляет старое изображение в видеопамяти.
+                    previous.Clear(); previous.vertices = mesh.vertices; previous.uv = mesh.uv;
+                    previous.normals = mesh.normals; previous.triangles = mesh.triangles; previous.bounds = mesh.bounds;
+                    filter.sharedMesh = previous; EditorUtility.SetDirty(previous); Object.DestroyImmediate(mesh); }
+                else { AssetDatabase.AddObjectToAsset(mesh, path); saved[mesh.name] = mesh; }
+            }
         }
         /// <summary>Снимает маленькое изображение объёмного товара в отдельную текстуру.</summary>
         /// <param name="item">Товар с постоянным именем файла.</param>
@@ -79,9 +106,10 @@ namespace TinyTrouble.EditorTools
                 camera.cullingMask = 1 << 31; camera.targetTexture = rt;
                 camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = new Color(.07f, .12f, .22f);
                 camera.fieldOfView = 32; camera.nearClipPlane = .01f; camera.farClipPlane = 100;
-                camera.transform.position = bounds.center + new Vector3(.7f, .3f, -1).normalized * bounds.extents.magnitude / Mathf.Tan(16 * Mathf.Deg2Rad) * 1.15f;
+                var view = item.Category == CosmeticCategory.Spray ? Vector3.back : new Vector3(.7f, .3f, -1).normalized;
+                camera.transform.position = bounds.center + view * bounds.extents.magnitude / Mathf.Tan(16 * Mathf.Deg2Rad) * 1.15f;
                 camera.transform.LookAt(bounds.center);
-                var light = lightObject.AddComponent<Light>(); light.type = LightType.Point; light.intensity = 3; light.range = 20; light.cullingMask = 1 << 31;
+                var light = lightObject.AddComponent<Light>(); light.type = LightType.Point; light.intensity = 1.25f; light.range = 20; light.cullingMask = 1 << 31;
                 light.transform.position = bounds.center + new Vector3(-2, 3, -4);
                 camera.Render(); RenderTexture.active = rt;
                 picture.ReadPixels(new Rect(0, 0, 256, 256), 0, 0); picture.Apply();
@@ -110,6 +138,12 @@ namespace TinyTrouble.EditorTools
             }
             var definitions = new CosmeticItem[]
             {
+                new CosmeticItem { Id = "pistol-gray", Name = "Серый", Description = "Бесплатный стартовый скин пистолета.", Category = CosmeticCategory.Weapon, Slot = CosmeticSlot.Pistol },
+                new CosmeticItem { Id = "rifle-gray", Name = "Серый", Description = "Бесплатный стартовый скин автомата.", Category = CosmeticCategory.Weapon, Slot = CosmeticSlot.Rifle },
+                new CosmeticItem { Id = "shotgun-gray", Name = "Серый", Description = "Бесплатный стартовый скин дробовика.", Category = CosmeticCategory.Weapon, Slot = CosmeticSlot.Shotgun },
+                new CosmeticItem { Id = "parachute-gray", Name = "Серый", Description = "Серый купол для первых приземлений.", Category = CosmeticCategory.Parachute, Slot = CosmeticSlot.Parachute },
+                new CosmeticItem { Id = "trail-gray", Name = "Воздух", Description = "Мягкие серые полосы воздуха за падающим героем.", Category = CosmeticCategory.Trail, Slot = CosmeticSlot.Trail },
+                new CosmeticItem { Id = "pickaxe-gray", Name = "Серая", Description = "Бесплатная стартовая кирка со стальным лезвием.", Category = CosmeticCategory.Pickaxe, Slot = CosmeticSlot.Pickaxe },
                 new CosmeticItem { Id = "stripes", Name = "Полосатый", Description = "Яркие полосы на любимой толстовке.", Category = CosmeticCategory.Clothes, Slot = CosmeticSlot.Clothes, Price = 400 },
                 new CosmeticItem { Id = "space", Name = "Космос", Description = "Толстовка со звёздами для новых приключений.", Category = CosmeticCategory.Clothes, Slot = CosmeticSlot.Clothes, Price = 400 },
                 new CosmeticItem { Id = "neon", Name = "Неон", Description = "Яркие линии на тёмной толстовке.", Category = CosmeticCategory.Clothes, Slot = CosmeticSlot.Clothes, Price = 400 },
@@ -136,7 +170,7 @@ namespace TinyTrouble.EditorTools
                 new CosmeticItem { Id = "trail-rainbow", Name = "Радуга", Description = "Разноцветный след за летящим героем.", Category = CosmeticCategory.Trail, Slot = CosmeticSlot.Trail, Price = 400 },
                 new CosmeticItem { Id = "pickaxe-ice", Name = "Ледяная", Description = "Кирка с голубым ледяным узором.", Category = CosmeticCategory.Pickaxe, Slot = CosmeticSlot.Pickaxe, Price = 400 },
                 new CosmeticItem { Id = "pickaxe-neon", Name = "Неоновая", Description = "Яркие полосы на мультяшной кирке.", Category = CosmeticCategory.Pickaxe, Slot = CosmeticSlot.Pickaxe, Price = 400 },
-                new CosmeticItem { Id = "pickaxe-space", Name = "Космическая", Description = "Кирка со звёздами для новых приключений.", Category = CosmeticCategory.Pickaxe, Slot = CosmeticSlot.Pickaxe, Price = 400 },
+                new CosmeticItem { Id = "pickaxe-space", Name = "Космическая", Description = "Кирка со звёздами для крутости.", Category = CosmeticCategory.Pickaxe, Slot = CosmeticSlot.Pickaxe, Price = 400 },
                 new CosmeticItem { Id = "base-yellow", Name = "Жёлтый", Description = "Твой бесплатный цвет толстовки.", Category = CosmeticCategory.Clothes, Slot = CosmeticSlot.Clothes, Price = 0, BasicColorIndex = 0 },
                 new CosmeticItem { Id = "base-blue", Name = "Голубой", Description = "Твой бесплатный цвет толстовки.", Category = CosmeticCategory.Clothes, Slot = CosmeticSlot.Clothes, Price = 0, BasicColorIndex = 1 },
                 new CosmeticItem { Id = "base-red", Name = "Красный", Description = "Твой бесплатный цвет толстовки.", Category = CosmeticCategory.Clothes, Slot = CosmeticSlot.Clothes, Price = 0, BasicColorIndex = 2 },

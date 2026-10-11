@@ -23,6 +23,7 @@ namespace TinyTrouble
         {
             var fallback = new CosmeticProfile();
             fallback.EquippedIds[0] = BasicId(legacyColor);
+            FillStarterEquipment(fallback.EquippedIds, catalog);
             if (!preferences.HasKey(ProfileKey))
             {
                 var first = fallback.Clone();
@@ -92,9 +93,19 @@ namespace TinyTrouble
             var choices = new string[10];
             for (var i = 0; i < Math.Min(10, profile.EquippedIds.Length); i++)
                 if (catalog.TryGet(profile.EquippedIds[i], out var item) && (int)item.Slot == i &&
-                    (item.BasicColorIndex >= 0 || profile.OwnedIds.Contains(item.Id))) choices[i] = item.Id;
+                    (item.Price == 0 || profile.OwnedIds.Contains(item.Id))) choices[i] = item.Id;
             if (string.IsNullOrEmpty(choices[0])) choices[0] = BasicId(legacyColor);
+            FillStarterEquipment(choices, catalog);
             profile.EquippedIds = choices;
+        }
+        /// <summary>Заполняет пустые места бесплатными серыми вещами; купленные и выбранные скины сохраняются.</summary>
+        /// <param name="choices">Десять мест для выбранных вещей.</param>
+        /// <param name="catalog">Каталог, в котором должны существовать стартовые вещи.</param>
+        static void FillStarterEquipment(string[] choices, CosmeticCatalog catalog)
+        {
+            foreach (var id in new[] { "pistol-gray", "rifle-gray", "shotgun-gray", "parachute-gray", "trail-gray", "pickaxe-gray" })
+                if (catalog.TryGet(id, out var item) && item.Price == 0 && string.IsNullOrEmpty(choices[(int)item.Slot]))
+                    choices[(int)item.Slot] = id;
         }
     }
 }
