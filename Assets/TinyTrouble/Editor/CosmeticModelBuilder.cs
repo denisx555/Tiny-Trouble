@@ -56,11 +56,27 @@ namespace TinyTrouble.EditorTools
                 Part(root, "Рисунок", PrimitiveType.Quad, Vector3.zero, new Vector3(1.2f, 1.2f, 1), material);
             else if (item.Category == CosmeticCategory.Trail)
             {
-                for (var i = 0; i < 12; i++)
+                for (var i = 0; i < (item.Id == "trail-rainbow" ? 6 : 12); i++)
                 {
                     var angle = i * 2.4f;
-                    Part(root, "Частица" + i, item.Id == "trail-stars" ? PrimitiveType.Cube : PrimitiveType.Sphere,
-                        new Vector3(Mathf.Sin(angle) * .2f, i * .1f, Mathf.Cos(angle) * .2f), Vector3.one * (.07f + i * .008f), material).localRotation = Quaternion.Euler(30, 20, 45);
+                    if (item.Id == "trail-rainbow")
+                    {
+                        var ribbon = new GameObject("Лента" + i); ribbon.transform.SetParent(root.transform, false); ribbon.transform.localPosition = new Vector3((i - 2.5f) * .07f, 0, 0);
+                        var line = ribbon.AddComponent<LineRenderer>(); line.useWorldSpace = false; line.positionCount = 8; line.widthMultiplier = .035f; line.sharedMaterial = material;
+                        for (var point = 0; point < 8; point++) line.SetPosition(point, new Vector3(Mathf.Sin(point + i) * .02f, point * .16f, 0));
+                    }
+                    else
+                    {
+                        var particle = Part(root, "Частица" + i, item.Id == "trail-stars" ? PrimitiveType.Cube : PrimitiveType.Sphere,
+                            new Vector3(Mathf.Sin(angle) * .2f, i * .1f, Mathf.Cos(angle) * .2f), Vector3.one * (.07f + i * .008f), material);
+                        particle.localRotation = Quaternion.Euler(0, 0, 45);
+                        if (item.Id == "trail-stars")
+                        {
+                            particle.localScale = new Vector3(.04f, .14f, .04f);
+                            var cross = Part(root, "Звезда" + i, PrimitiveType.Cube, particle.localPosition, new Vector3(.14f, .04f, .04f), material);
+                            cross.SetParent(particle, true); cross.localRotation = Quaternion.identity;
+                        }
+                    }
                 }
             }
             return root;
