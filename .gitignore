@@ -53,6 +53,7 @@
 /.codex/
 /.aws/
 /.superpowers/sdd/
+/.superpowers/brainstorm/
 .env
 .env.*
 # Пример настроек без настоящих секретов можно хранить в Git.
