@@ -2209,8 +2209,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 475003df75b8b22339f1fb2f7344893d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   tiltDegrees: 1.3
   speed: 1.7
 --- !u!65 &2728151192781728711
@@ -2244,8 +2244,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 057fa659e7eec99dca73c48b24f1fc86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   degreesPerScreenWidth: 360
 --- !u!114 &3041085182911478254
 MonoBehaviour:
@@ -2257,8 +2257,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d827fda96c19d7a22863c2debee36b09, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   upperBody: {fileID: 2299516750953871191}
   leftArm: {fileID: 8622789662215322879}
   rightArm: {fileID: 3396309796702943771}
@@ -2277,8 +2277,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9bcf5899769abb4c8dae8b4c04fd350, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   headPivot: {fileID: 7728014989017726543}
   eyeWhites:
   - {fileID: 6331289728551277526}
@@ -2299,8 +2299,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 41519b9d5231974c3ae61f0afb80222b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   gestures: {fileID: 3041085182911478254}
   face: {fileID: 6316131972024564643}
 --- !u!114 &6331215360136935549
@@ -2313,8 +2313,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef6c94993c7d01b18aad3002718d6a77, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   life: {fileID: 5860517707024047100}
 --- !u!1 &6552342268770570285
 GameObject:
